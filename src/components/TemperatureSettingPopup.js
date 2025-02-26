@@ -1,15 +1,21 @@
 import { useState } from "react";
 import Switch from "../components/Switch.js";
 import { X, ArrowLeft } from "lucide-react";
+import ScheduleTaskPopup from "../components/ScheduleTaskPopup.js";
 
 const TemperaturePopup = ({ onClose }) => {
+  const [showPopup, setShowPopup] = useState(false);
   const [mode, setMode] = useState("Automatic");
   const [isSunshadeOn, setIsSunshadeOn] = useState(false);
   const [isNotify, setIsNotify] = useState(false);
   const [lowerLimit, setLowerLimit] = useState(10);
   const [upperLimit, setUpperLimit] = useState(50);
-  const [startTime, setStartTime] = useState("08:00");
-  const [endTime, setEndTime] = useState("18:00");
+  const [currentSchedule, setCurrentSchedule] = useState(null);
+
+  const updateSchedule = (newSchedule) => {
+    setCurrentSchedule(newSchedule);
+    setShowPopup(false);
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4">
@@ -32,8 +38,7 @@ const TemperaturePopup = ({ onClose }) => {
               <button
                 key={option}
                 onClick={() => setMode(option)}
-                className={`py-2 px-4 rounded-lg border transition ${mode === option ? "bg-blue-500 text-white" : "bg-gray-100 hover:bg-gray-200"
-                  }`}
+                className={`py-2 px-4 rounded-lg border transition ${mode === option ? "bg-blue-500 text-white" : "bg-gray-100 hover:bg-gray-200"}`}
               >
                 {option}
               </button>
@@ -42,24 +47,42 @@ const TemperaturePopup = ({ onClose }) => {
 
           {/* Automatic Mode - Adjust Upper and Lower Limits */}
           {mode === "Automatic" && (
-            <div className="space-y-2">
-              <h3 className="font-semibold">Safety</h3>
-              <div className="flex justify-between items-center">
-                <span>Lower limit</span>
+            <div className="space-y-4">
+              <h3 className="font-semibold">Temperature Range</h3>
+
+              {/* Lower Limit */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Lower Limit: {lowerLimit}°C</label>
                 <input
-                  type="number"
+                  type="range"
+                  min="-10"
+                  max="100"
+                  step="1"
                   value={lowerLimit}
-                  onChange={(e) => setLowerLimit(Number(e.target.value))}
-                  className="border p-1 rounded w-16 text-center"
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setLowerLimit(value);
+                    if (value > upperLimit - 5) setUpperLimit(value + 5);
+                  }}
+                  className="w-full"
                 />
               </div>
-              <div className="flex justify-between items-center">
-                <span>Upper limit</span>
+
+              {/* Upper Limit */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Upper Limit: {upperLimit}°C</label>
                 <input
-                  type="number"
+                  type="range"
+                  min="-10"
+                  max="100"
+                  step="1"
                   value={upperLimit}
-                  onChange={(e) => setUpperLimit(Number(e.target.value))}
-                  className="border p-1 rounded w-16 text-center"
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    setUpperLimit(value);
+                    if (value < lowerLimit + 5) setLowerLimit(value - 5);
+                  }}
+                  className="w-full"
                 />
               </div>
             </div>
@@ -67,40 +90,53 @@ const TemperaturePopup = ({ onClose }) => {
 
           {/* Scheduled Mode - Time Selection */}
           {mode === "Scheduled" && (
-            <div className="space-y-2">
-              <h3 className="font-semibold">Schedule mode setting</h3>
-              <div className="flex justify-between items-center">
-                <span>From</span>
-                <input
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="border p-1 rounded"
+            <div className="mt-4">
+              {currentSchedule ? (
+                <div className="border p-4 rounded-lg">
+                  <p className="font-medium">
+                    {currentSchedule.type === "monthly" ? `Days: ${currentSchedule.daysOfMonth.join(", ")}` : ""}
+                    {currentSchedule.type === "weekly" ? `Days: ${currentSchedule.daysOfWeek.join(", ")}` : ""}
+                    {currentSchedule.type === "daily" ? `Time: ${currentSchedule.time}` : ""}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {currentSchedule.type.charAt(0).toUpperCase() + currentSchedule.type.slice(1)} at {currentSchedule.time} for {currentSchedule.duration} seconds
+                  </p>
+                </div>
+              ) : (
+                <p className="text-gray-500">No schedule set</p>
+              )}
+
+              <button
+                onClick={() => setShowPopup(true)}
+                className="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
+              >
+                {currentSchedule ? "Update Schedule" : "Set Schedule"}
+              </button>
+
+              {showPopup && (
+                <ScheduleTaskPopup
+                  onClose={() => setShowPopup(false)}
+                  onSave={updateSchedule}
                 />
-              </div>
-              <div className="flex justify-between items-center">
-                <span>To</span>
-                <input
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className="border p-1 rounded"
-                />
-              </div>
+              )}
             </div>
           )}
 
           {/* Manual Mode - Toggle Sunshade */}
           {mode === "Manual" && (
             <div className="flex justify-between items-center">
-              <span>Sunshade</span>
+              <span>Turn on sunshade</span>
               <Switch checked={isSunshadeOn} onCheckedChange={setIsSunshadeOn} />
             </div>
           )}
-          <div className="flex justify-between items-center">
-            <span>Send warning</span>
-            <Switch checked={isNotify} onCheckedChange={setIsNotify} />
-          </div>
+
+          {mode !== "Manual" && (
+            <div className="flex justify-between items-center">
+              <span>Send warning</span>
+              <Switch checked={isNotify} onCheckedChange={setIsNotify} />
+            </div>
+          )}
+
           <div className="mt-6 flex justify-between">
             <button onClick={onClose} className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 transition">
               Close
