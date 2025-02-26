@@ -1,56 +1,66 @@
-import React, { useState } from "react";
-import Sidebar from "../components/Sidebar";
-import Navbar from "../components/Navbar";
-import StatsCard from "../components/StatsCard";
-import ActivityChart from "../components/ActivityChart";
-import ProductsChart from "../components/ProductsChart";
-import ProfileModal from "../components/ProfileModal"; // ✅ Import the modal
-import Transactions from "../components/Transactions";
+import { Bell, BarChart, User, Settings } from "lucide-react";
+import { useState } from "react";
+import Card from "../components/Card.js";
+import IrrigationSettingPopup from "../components/IrrigationSettingPopup.js";
+import LightSettingPopup from "../components/LightSettingPopup.js";
+import TemperaturePopup from "../components/TemperatureSettingPopup.js";
 
-const Dashboard = () => {
-  const [isProfileModalOpen, setProfileModalOpen] = useState(false);
+export default function YoloFarmDashboard() {
+  const [isSettingIrrigation, setSettingIrrigation] = useState(false);
+  const [isSettingTemperature, setSettingTemperature] = useState(false);
+  const [isSettingLighting, setSettingLighting] = useState(false);
 
   return (
-    <div className="flex bg-gray-100 min-h-screen">
-      <Sidebar />
-
-      <div className="flex-1 p-6">
-        <Navbar />
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
-          <StatsCard title="Total Revenues" value="$2,129,430" change="+2.5%" />
-          <StatsCard title="Total Transactions" value="1,520" change="+1.7%" />
-          <StatsCard title="Total Likes" value="9,721" change="+1.4%" />
-          <StatsCard title="Total Users" value="9,721" change="+4.2%" />
+    <div className="p-6 max-w-lg md:max-w-2xl mx-auto space-y-6">
+      <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-3">
+        <div className="w-16 h-16 bg-green-200 flex items-center justify-center rounded-xl">
+          <span className="text-3xl">🌿</span>
         </div>
-        
-
-        {/* Charts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          <ActivityChart />
-          <ProductsChart />
+        <div className="text-center md:text-left">
+          <h1 className="text-2xl font-bold">YOLO FARM</h1>
+          <p className="text-gray-600">Hello, Group 72</p>
         </div>
-        <div className="p-6">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
-      <Transactions />
-    </div>
-
-        {/* Profile Section */}
-        <div className="mt-6 flex justify-center">
-          <button
-            className="bg-gray-200 px-6 py-3 rounded-lg text-gray-700 hover:bg-gray-300"
-            onClick={() => setProfileModalOpen(true)}
-          >
-            Add Profile
-          </button>
+        <div className="flex space-x-4 text-green-500">
+          <Bell className="cursor-pointer hover:text-green-700" />
+          <BarChart className="cursor-pointer hover:text-green-700" />
+          <User className="cursor-pointer hover:text-green-700" />
         </div>
-
-        {/* Profile Modal */}
-        <ProfileModal isOpen={isProfileModalOpen} onClose={() => setProfileModalOpen(false)} />
       </div>
-    </div>
-  );
-};
 
-export default Dashboard;
+      <Card
+        title="Irrigation"
+        value="15"
+        unit="%"
+        description="Keep around 10%"
+        mode="AUTOMATIC"
+        bgColor="bg-blue-400"
+        icon="💧"
+        onSettingsClick={() => setSettingIrrigation(true)}
+      />
+      <Card
+        title="Temperature"
+        value="30"
+        unit="°C"
+        description="Sunscreens between 08 AM - 11 AM"
+        mode="SCHEDULED"
+        bgColor="bg-red-400"
+        icon="🌡"
+        onSettingsClick={() => setSettingTemperature(true)}
+      />
+      <Card
+        title="Lighting"
+        value="600"
+        unit="W/m²"
+        description="Click to turn off lamps"
+        mode="MANUAL"
+        bgColor="bg-green-700"
+        icon="☀️"
+        onSettingsClick={() => setSettingLighting(true)}
+      />
+      {isSettingIrrigation && <IrrigationSettingPopup isOpen={isSettingIrrigation} onClose={() => setSettingIrrigation(false)} />}
+      {isSettingTemperature && <TemperaturePopup isOpen={isSettingTemperature} onClose={() => setSettingTemperature(false)} />}
+      {isSettingLighting && <LightSettingPopup isOpen={isSettingLighting} onClose={() => setSettingLighting(false)} />}
+    </div>
+    
+  );
+}
