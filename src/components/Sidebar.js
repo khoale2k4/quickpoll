@@ -1,5 +1,11 @@
 import React from "react";
-import { FaChartPie, FaWallet, FaCalendarAlt, FaUser, FaCog } from "react-icons/fa";
+import {
+  FaChartPie,
+  FaWallet,
+  FaCalendarAlt,
+  FaUser,
+  FaCog,
+} from "react-icons/fa";
 
 const Sidebar = () => {
   return (
@@ -7,7 +13,7 @@ const Sidebar = () => {
       <h2 className="text-3xl font-bold mb-6">Board.</h2>
 
       <ul className="space-y-6 text-lg">
-        <li className="flex items-center space-x-3 hover:text-gray-200 cursor-pointer">
+        <li className="flex items-center space-x-3 hover:text-gray-200 cursor-pointer ">
           <FaChartPie />
           <span>Dashboard</span>
         </li>

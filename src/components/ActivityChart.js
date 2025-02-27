@@ -22,7 +22,7 @@ const ActivityChart = () => {
   };
 
   return (
-    <div className="p-6 bg-white shadow-lg rounded-xl">
+    <div className="p-6 bg-white shadow-lg rounded-xl ">
       <h3 className="text-lg font-semibold mb-4">Activities</h3>
       <Bar data={data} />
     </div>
