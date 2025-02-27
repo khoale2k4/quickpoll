@@ -161,4 +161,6 @@ const IrrigationSettingPopup = ({ onClose }) => {
     );
 }
 
+
 export default IrrigationSettingPopup;
+
