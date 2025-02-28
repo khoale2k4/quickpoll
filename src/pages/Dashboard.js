@@ -5,6 +5,8 @@ import IrrigationSettingPopup from "../components/IrrigationSettingPopup.js";
 import LightSettingPopup from "../components/LightSettingPopup.js";
 import TemperaturePopup from "../components/TemperatureSettingPopup.js";
 
+import { LuLeaf } from "react-icons/lu";
+
 export default function YoloFarmDashboard() {
   const [isSettingIrrigation, setSettingIrrigation] = useState(false);
   const [isSettingTemperature, setSettingTemperature] = useState(false);
@@ -12,15 +14,17 @@ export default function YoloFarmDashboard() {
 
   return (
     <div className="p-6 max-w-lg md:max-w-2xl mx-auto space-y-6">
-      <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-3">
+      <div className="flex flex-col md:flex-row items-center">
         <div className="w-16 h-16 bg-green-200 flex items-center justify-center rounded-xl">
-          <span className="text-3xl">🌿</span>
+          <LuLeaf className="w-12 h-12 text-green-500 " />
         </div>
-        <div className="text-center md:text-left">
+        
+        <div className="text-center md:text-left ml-4">
           <h1 className="text-2xl font-bold">YOLO FARM</h1>
           <p className="text-gray-600">Hello, Group 72</p>
         </div>
-        <div className="flex space-x-4 text-green-500">
+
+        <div className="flex space-x-4 text-green-500 ml-auto">
           <Bell className="cursor-pointer hover:text-green-700" />
           <BarChart className="cursor-pointer hover:text-green-700" />
           <User className="cursor-pointer hover:text-green-700" />

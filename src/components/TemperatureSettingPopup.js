@@ -19,7 +19,7 @@ const TemperaturePopup = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-96 ">
         <div className="flex items-center justify-between mb-4">
           <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-200">
             <ArrowLeft className="w-5 h-5" />

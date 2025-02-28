@@ -94,7 +94,7 @@ const ScheduleTaskPopup = ({ onClose, onSave }) => {
               {[...Array(31)].map((_, i) => (
                 <button
                   key={i + 1}
-                  className={`p-2 border rounded ${
+                  className={`p-2 border rounded-full ${
                     daysOfMonth.includes(i + 1) ? "bg-blue-500 text-white" : "bg-gray-100"
                   }`}
                   onClick={() => toggleDay(i + 1)}
