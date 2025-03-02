@@ -4,6 +4,7 @@ import Register from "./pages/Register"; // ✅ Import Register page
 import Dashboard from "./pages/Dashboard";
 import Setup from "./pages/Setup";
 import Intergration from "./pages/Intergration";
+import DashboardStatistics from "./pages/Statistics";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} /> {/* ✅ Add Register Route */}
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/statistics" element={<DashboardStatistics />} />
         <Route path="/register/setup" element={<Setup />} />
         <Route path="/register/intergration" element={<Intergration />} />
       </Routes>

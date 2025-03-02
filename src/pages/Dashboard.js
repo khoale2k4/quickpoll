@@ -4,6 +4,7 @@ import Card from "../components/Card.js";
 import IrrigationSettingPopup from "../components/IrrigationSettingPopup.js";
 import LightSettingPopup from "../components/LightSettingPopup.js";
 import TemperaturePopup from "../components/TemperatureSettingPopup.js";
+import { useNavigate } from "react-router-dom";
 
 import { LuLeaf } from "react-icons/lu";
 
@@ -11,7 +12,11 @@ export default function YoloFarmDashboard() {
   const [isSettingIrrigation, setSettingIrrigation] = useState(false);
   const [isSettingTemperature, setSettingTemperature] = useState(false);
   const [isSettingLighting, setSettingLighting] = useState(false);
+  const navigate = useNavigate();
 
+  const handleStatisticsClick = () => {
+    navigate("/statistics")
+  }
   return (
     <div className="p-6 max-w-lg md:max-w-2xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row items-center">
@@ -26,7 +31,7 @@ export default function YoloFarmDashboard() {
 
         <div className="flex space-x-4 text-green-500 ml-auto">
           <Bell className="cursor-pointer hover:text-green-700" />
-          <BarChart className="cursor-pointer hover:text-green-700" />
+          <BarChart className="cursor-pointer hover:text-green-700" onClick={handleStatisticsClick} />
           <User className="cursor-pointer hover:text-green-700" />
         </div>
       </div>
