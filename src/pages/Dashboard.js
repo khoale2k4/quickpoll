@@ -36,7 +36,9 @@ export default function YoloFarmDashboard() {
             className="cursor-pointer hover:text-green-700" 
             onClick={handleIconClick("reminder")}
           />
-          <BarChart className="cursor-pointer hover:text-green-700" />
+          <BarChart 
+            className="cursor-pointer hover:text-green-700" 
+            onClick={handleIconClick("statistic")}/>
           <User 
             className="cursor-pointer hover:text-green-700" 
             onClick={handleIconClick("profile")} 

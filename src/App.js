@@ -7,6 +7,7 @@ import Intergration from "./pages/Intergration";
 import UserProfile from "./pages/UserProfile";
 import Reminder from "./pages/Reminder";
 import Action from "./pages/Action";
+import DashboardStatistics from "./pages/Statistics";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} /> {/* ✅ Add Register Route */}
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/statistics" element={<DashboardStatistics />} />
         <Route path="/register/setup" element={<Setup />} />
         <Route path="/register/intergration" element={<Intergration />} />
         <Route path="/profile" element={<UserProfile />} />
