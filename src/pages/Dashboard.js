@@ -31,7 +31,10 @@ export default function YoloFarmDashboard() {
         </div>
 
         <div className="flex space-x-4 text-green-500 ml-auto">
-          <History className="cursor-pointer hover:text-green-700"/>
+          <History 
+            className="cursor-pointer hover:text-green-700"
+            onClick={handleIconClick("action")}
+            />
           <Bell 
             className="cursor-pointer hover:text-green-700" 
             onClick={handleIconClick("reminder")}
