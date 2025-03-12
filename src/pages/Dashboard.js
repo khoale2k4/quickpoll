@@ -1,4 +1,4 @@
-import { Bell, BarChart, User, Settings, History  } from "lucide-react";
+import { Bell, BarChart, User, History  } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import Card from "../components/Card.js";

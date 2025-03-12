@@ -1,4 +1,4 @@
-import { Bell, BarChart, User, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 
 const Card = ({ title, value, unit, description, mode, bgColor, icon, onSettingsClick }) => (
     <div className={`relative p-4 rounded-2xl shadow-md flex flex-col md:flex-row justify-between items-center ${bgColor} text-white transition-transform hover:scale-105 `}>
