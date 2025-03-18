@@ -49,10 +49,11 @@ export default function DashboardStatistics() {
         const transformedData = data
             .map((record) => {
                 const date = new Date(record.recordTime);
+                if(!record) return {};
                 return {
                     date,
                     day: date.getDate(),
-                    value: record.recordValue,
+                    value: 0,
                 };
             })
             .sort((a, b) => a.date - b.date);
