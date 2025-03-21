@@ -15,6 +15,11 @@ export default function YoloFarmDashboard() {
   const [isSettingTemperature, setSettingTemperature] = useState(false);
   const [isSettingLighting, setSettingLighting] = useState(false);
   const [infoMap, setInfoMap] = useState({
+    intergration: {
+      value: -1,
+      mode: null,
+      description: ""
+    },
     irrigation: {
       value: -1,
       mode: null,
@@ -40,8 +45,9 @@ export default function YoloFarmDashboard() {
   useEffect(() => {
     const fetchMoistureData = async () => {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/moisture/1`);
+        const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/moisture`);
         const data = response.data;
+        if(data.length === 0) return;
         const latestData = data[data.length - 1];
         setInfoMap(prevInfoMap => ({
           ...prevInfoMap,
@@ -57,8 +63,9 @@ export default function YoloFarmDashboard() {
 
     const fetchTemperatureData = async () => {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/temperature/1`);
+        const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/temperature`);
         const data = response.data;
+        if(data.length === 0) return;
         const latestData = data[data.length - 1];
         setInfoMap(prevInfoMap => ({
           ...prevInfoMap,
@@ -74,8 +81,9 @@ export default function YoloFarmDashboard() {
 
     const fetchLightningData = async () => {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/light/1`);
+        const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/light`);
         const data = response.data;
+        if(data.length === 0) return;
         const latestData = data[data.length - 1];
         setInfoMap(prevInfoMap => ({
           ...prevInfoMap,
@@ -129,6 +137,18 @@ export default function YoloFarmDashboard() {
         </div>
       </div>
 
+      <Card
+        title="Intergration"
+        value={infoMap.intergration.value}
+        unit="%"
+        description={infoMap.intergration.description}
+        mode={infoMap.intergration.mode}
+        bgColor={"bg-blue-400"}
+        icon="💧"
+        onSettingsClick={() => {}
+          // setSettingIntergration(true)
+        }
+      />
       <Card
         title="Irrigation"
         value={infoMap.irrigation.value}

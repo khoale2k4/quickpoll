@@ -36,6 +36,7 @@ export default function DashboardStatistics() {
     }
 
     const constructData = (data) => {
+        console.log(data);
         if (!data || data.length === 0) {
             return {
                 transformedData: [],
@@ -48,12 +49,15 @@ export default function DashboardStatistics() {
 
         const transformedData = data
             .map((record) => {
+                if (record.recordTime === null) {
+                    record.recordTime = new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toISOString();
+                }
                 const date = new Date(record.recordTime);
                 if(!record) return {};
                 return {
                     date,
                     day: date.getDate(),
-                    value: 0,
+                    value: record.recordValue,
                 };
             })
             .sort((a, b) => a.date - b.date);
@@ -76,8 +80,9 @@ export default function DashboardStatistics() {
     useEffect(() => {
         const fetchMoistureData = async () => {
             try {
-                const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/moisture/1`);
+                const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/moisture`);
                 const data = constructData(response.data);
+                console.log(data);
                 setCurData(data.transformedData);
                 setInfoMap({
                     showingDataFrom: data.minDate,
@@ -93,7 +98,7 @@ export default function DashboardStatistics() {
         };
         const fetchTemperaturData = async () => {
             try {
-                const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/temperature/1`);
+                const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/temperature`);
                 const data = constructData(response.data);
                 setCurData(data.transformedData);
                 setInfoMap({
@@ -110,7 +115,7 @@ export default function DashboardStatistics() {
         };
         const fetchLightningData = async () => {
             try {
-                const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/light/1`);
+                const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/light`);
                 const data = constructData(response.data);
                 setCurData(data.transformedData);
                 setInfoMap({
@@ -249,9 +254,9 @@ export default function DashboardStatistics() {
                     <p>
                         Last measured: <strong>{infoMap.lastMeasured}</strong>
                     </p>
-                    <p>
-                        Average value: <strong>{infoMap.averageValue.toFixed(2)}</strong>
-                    </p>
+                    {infoMap && <p>
+                        Average value: <strong>{Number(infoMap.averageValue).toFixed(2)}</strong>
+                    </p>}
                     <hr className="my-2" />
                     <p>
                         Selected date: <strong>{new Date(infoMap.selectedDate).toLocaleDateString("vi-VN")}</strong>
