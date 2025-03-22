@@ -80,7 +80,7 @@ export default function DashboardStatistics() {
     useEffect(() => {
         const fetchMoistureData = async () => {
             try {
-                const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/moisture`);
+                const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/moisture/1`);
                 const data = constructData(response.data);
                 console.log(data);
                 setCurData(data.transformedData);
@@ -98,7 +98,7 @@ export default function DashboardStatistics() {
         };
         const fetchTemperaturData = async () => {
             try {
-                const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/temperature`);
+                const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/temperature/1`);
                 const data = constructData(response.data);
                 setCurData(data.transformedData);
                 setInfoMap({
@@ -115,7 +115,7 @@ export default function DashboardStatistics() {
         };
         const fetchLightningData = async () => {
             try {
-                const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/light`);
+                const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/light/1`);
                 const data = constructData(response.data);
                 setCurData(data.transformedData);
                 setInfoMap({

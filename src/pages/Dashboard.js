@@ -9,50 +9,106 @@ import TemperaturePopup from "../components/TemperatureSettingPopup.js";
 import { LuLeaf } from "react-icons/lu";
 import { useEffect } from "react";
 import axios from "axios";
+import NotificationModal from "../components/MessageModal.js";
 
 export default function YoloFarmDashboard() {
   const [isSettingIrrigation, setSettingIrrigation] = useState(false);
   const [isSettingTemperature, setSettingTemperature] = useState(false);
   const [isSettingLighting, setSettingLighting] = useState(false);
+  const [message, setMessage] = useState("");
+  const [openMessage, setOpenMessage] = useState(false);
   const [infoMap, setInfoMap] = useState({
-    intergration: {
+    amountofwater: {
       value: -1,
       mode: null,
       description: ""
     },
-    irrigation: {
+    moisture: {
       value: -1,
       mode: null,
       description: ""
     },
-    temperture: {
+    temperature: {
       value: -1,
       mode: null,
       description: ""
     },
-    lightning: {
+    light: {
+      value: -1,
+      mode: null,
+      description: ""
+    },
+    humidity: {
       value: -1,
       mode: null,
       description: ""
     }
-  })
+  });
+
+  const [dataTypes, setDataTypes] = useState(['amountofwater', 'moisture', 'light', 'humidity', 'temperature']);
+  const [modes, setModes] = useState(['automated', 'scheduled', 'manual'])
+
+  const getDataAttributes = (type) => {
+    const attributes = {
+      amountofwater: { unit: "L", bgColor: "bg-blue-500", icon: "💦" },
+      moisture: { unit: "%", bgColor: "bg-blue-600", icon: "🌱" },
+      light: { unit: "W/m²", bgColor: "bg-yellow-500", icon: "☀️" },
+      humidity: { unit: "%", bgColor: "bg-green-500", icon: "💧" },
+      temperature: { unit: "°C", bgColor: "bg-red-400", icon: "🌡" },
+    };
+
+    return attributes[type] || { unit: "", bgColor: "bg-gray-400", icon: "❓" };
+  };
 
   const navigate = useNavigate();
   const handleIconClick = (value) => () => {
     navigate(`/${value}`);
   };
 
+  const saveSetting = async (setting, type, saveMode) => {
+    console.log("Saved");
+    try {
+      for (const mode of modes) {
+        const apiUrl = `${process.env.REACT_APP_HOST}/api/${type}/${mode}`;
+        const getResponse = await axios.get(apiUrl);
+        if (getResponse.data && getResponse.data.length > 0) {
+          const data = getResponse.data[0];
+          const settingId = data.id;
+          const response = await axios.delete(`${process.env.REACT_APP_HOST}/api/${type}/${mode}/${settingId}`)
+          console.log(response);
+        }
+      }
+
+      const response = await axios.post(`${process.env.REACT_APP_HOST}/api/${type}/${saveMode}`, setting);
+      console.log("Lưu thành công:", response.data);
+      if(type == "irrigationsettings") {
+        setSettingIrrigation(false);
+      } else if (type == "temperaturesettings") {
+        setSettingTemperature(false);
+      } else {
+        setSettingLighting(false);
+      }
+      setOpenMessage(true);
+      setMessage("Lưu cài đặt thành công!");
+    } catch (err) {
+      console.error("Lỗi trong saveSetting:", err);
+      setOpenMessage(true);
+      setMessage("Lỗi khi lưu cài đặt: ", err);
+    }
+  };
+
+
   useEffect(() => {
-    const fetchMoistureData = async () => {
+    const fetchData = async (type) => {
       try {
-        const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/moisture`);
+        const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/${type}/1`);
         const data = response.data;
-        if(data.length === 0) return;
+        if (data.length === 0) return;
         const latestData = data[data.length - 1];
         setInfoMap(prevInfoMap => ({
           ...prevInfoMap,
-          irrigation: {
-            ...prevInfoMap.irrigation,
+          [type]: {
+            ...prevInfoMap[type],
             value: latestData.recordValue
           }
         }));
@@ -61,53 +117,22 @@ export default function YoloFarmDashboard() {
       }
     };
 
-    const fetchTemperatureData = async () => {
-      try {
-        const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/temperature`);
-        const data = response.data;
-        if(data.length === 0) return;
-        const latestData = data[data.length - 1];
-        setInfoMap(prevInfoMap => ({
-          ...prevInfoMap,
-          temperture: {
-            ...prevInfoMap.temperture,
-            value: latestData.recordValue
-          }
-        }));
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-
-    const fetchLightningData = async () => {
-      try {
-        const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/light`);
-        const data = response.data;
-        if(data.length === 0) return;
-        const latestData = data[data.length - 1];
-        setInfoMap(prevInfoMap => ({
-          ...prevInfoMap,
-          lightning: {
-            ...prevInfoMap.lightning,
-            value: latestData.recordValue
-          }
-        }));
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
+    for (const dataType of dataTypes) {
+      fetchData(dataType);
+    }
 
     const intervalId = setInterval(() => {
-      fetchMoistureData();
-      fetchTemperatureData();
-      fetchLightningData();
-    }, 3000);
+      for (const dataType of dataTypes) {
+        fetchData(dataType);
+      }
+    }, 1000);
 
     return () => clearInterval(intervalId);
   }, []);
 
   return (
     <div className="p-6 max-w-lg md:max-w-2xl mx-auto space-y-6">
+      {openMessage && <NotificationModal message={message} onClose={() => setOpenMessage(false)} />}
       <div className="flex flex-col md:flex-row items-center">
         <div className="w-16 h-16 bg-green-200 flex items-center justify-center rounded-xl">
           <LuLeaf className="w-12 h-12 text-green-500 " />
@@ -137,53 +162,32 @@ export default function YoloFarmDashboard() {
         </div>
       </div>
 
-      <Card
-        title="Intergration"
-        value={infoMap.intergration.value}
-        unit="%"
-        description={infoMap.intergration.description}
-        mode={infoMap.intergration.mode}
-        bgColor={"bg-blue-400"}
-        icon="💧"
-        onSettingsClick={() => {}
-          // setSettingIntergration(true)
-        }
-      />
-      <Card
-        title="Irrigation"
-        value={infoMap.irrigation.value}
-        unit="%"
-        description={infoMap.irrigation.description}
-        mode={infoMap.irrigation.mode}
-        bgColor={"bg-blue-400"}
-        icon="💧"
-        onSettingsClick={() => setSettingIrrigation(true)}
-      />
-      <Card
-        title="Temperature"
-        value={infoMap.temperture.value}
-        unit="°C"
-        description={infoMap.temperture.description}
-        mode={infoMap.temperture.mode}
-        bgColor="bg-red-400"
-        icon="🌡"
-        onSettingsClick={() => setSettingTemperature(true)}
-      />
-      <Card
-        title="Lighting"
-        value={infoMap.lightning.value}
-        unit="W/m²"
-        description={infoMap.lightning.description}
-        mode={infoMap.lightning.mode}
-        bgColor="bg-green-700"
-        icon="☀️"
-        onSettingsClick={() => setSettingLighting(true)}
-      />
-      {isSettingIrrigation && <IrrigationSettingPopup isOpen={isSettingIrrigation} onClose={() => setSettingIrrigation(false)} />}
-      {isSettingTemperature && <TemperaturePopup isOpen={isSettingTemperature} onClose={() => setSettingTemperature(false)} />}
+      {dataTypes.map((type) => {
+        const { unit, bgColor, icon } = getDataAttributes(type);
+
+        return (
+          <Card
+            key={type}
+            title={type.charAt(0).toUpperCase() + type.slice(1)}
+            value={infoMap[type]?.value ?? "N/A"}
+            unit={unit}
+            description={infoMap[type]?.description ?? "Không có dữ liệu"}
+            mode={infoMap[type]?.mode}
+            bgColor={bgColor}
+            icon={icon}
+            onSettingsClick={() => {
+              if (type === 'amountofwater' || type === 'moisture' || type === 'humidity') setSettingIrrigation(true);
+              if (type === 'temperature') setSettingTemperature(true);
+              if (type === 'light') setSettingLighting(true);
+            }}
+          />
+        );
+      })}
+
+      {isSettingIrrigation && <IrrigationSettingPopup isOpen={isSettingIrrigation} onClose={() => setSettingIrrigation(false)} onSave={(setting, mode) => { saveSetting(setting, "irrigationsettings", mode); }} />}
+      {isSettingTemperature && <TemperaturePopup isOpen={isSettingTemperature} onClose={() => setSettingTemperature(false)} onSave={(setting, mode) => { saveSetting(setting, "temperaturesettings", mode); }} />}
       {isSettingLighting && <LightSettingPopup isOpen={isSettingLighting} onClose={() => setSettingLighting(false)} />}
     </div>
-
   );
 
 }

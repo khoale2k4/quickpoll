@@ -1,22 +1,63 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import Switch from "../components/Switch.js";
 import ScheduleTaskPopup from "../components/ScheduleTaskPopup.js";
+import axios from "axios";
 
-const IrrigationSettingPopup = ({ onClose }) => {
+const IrrigationSettingPopup = ({ onClose, onSave }) => {
     const [showPopup, setShowPopup] = useState(false);
-    const [moistureMode, setMoistureMode] = useState("Automatic");
+    const [moistureMode, setMoistureMode] = useState("Automated");
     const [moistureLevel, setMoistureLevel] = useState("Dry");
-    const [customMoisture, setCustomMoisture] = useState(50); // Mặc định 50%
+    const [customMoisture, setCustomMoisture] = useState(50);
     const [dangerBehavior, setDangerBehavior] = useState("Warn and take action");
     const [isWateringOn, setIsWateringOn] = useState(false);
     const [currentSchedule, setCurrentSchedule] = useState(null);
+    const [modes, setModes] = useState(['automated', 'scheduled', 'manual'])
+    const data = {
+        automated: {
+            farm: {
+                "id": 1
+            },
+            moistureLevel: moistureLevel,
+            dangerSafeBehavior: dangerBehavior
+        },
+        manual: {
+            farm: {
+                id: 1
+            },
+            watering: isWateringOn ? "ON" : "OFF"
+        },
+        scheduled: {
+            farm: {
+                id: 1
+            },
+            dangerSafeBehavior: dangerBehavior
+        }
+    }
 
     const updateSchedule = (newSchedule) => {
         setCurrentSchedule(newSchedule);
         setShowPopup(false);
     };
+
+    const fetchSetting = async () => {
+        for (const mode of modes) {
+            const apiUrl = `${process.env.REACT_APP_HOST}/api/irrigationsettings/${mode}`;
+            const getResponse = await axios.get(apiUrl);
+            if (getResponse.data && getResponse.data.length > 0) {
+                const data = getResponse.data[0];
+                setMoistureMode(mode.charAt(0).toUpperCase() + mode.slice(1));
+                setMoistureLevel(data.moistureLevel);
+                setDangerBehavior(data.dangerSafeBehavior);
+                setIsWateringOn(data.watering === "ON");
+            }
+        }
+    }
+
+    useEffect(() => {
+        fetchSetting();
+    }, [])
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4">
@@ -41,7 +82,7 @@ const IrrigationSettingPopup = ({ onClose }) => {
                     <div>
                         <h3 className="font-medium text-gray-700">Moisture Regulation Mode</h3>
                         <div className="grid grid-cols-3 gap-2 mt-2">
-                            {['Automatic', 'Scheduled', 'Manual'].map((mode) => (
+                            {['Automated', 'Scheduled', 'Manual'].map((mode) => (
                                 <button
                                     key={mode}
                                     onClick={() => setMoistureMode(mode)}
@@ -54,7 +95,7 @@ const IrrigationSettingPopup = ({ onClose }) => {
                     </div>
 
                     {/* Moisture Level */}
-                    {moistureMode === "Automatic" && <div>
+                    {moistureMode === "Automated" && <div>
                         <h3 className="font-medium text-gray-700">Moisture Level</h3>
                         <div className="grid grid-cols-4 gap-2 mt-2">
                             {['Dry', 'Average', 'Wet', 'Custom'].map((level) => (
@@ -69,7 +110,7 @@ const IrrigationSettingPopup = ({ onClose }) => {
                         </div>
                     </div>
                     }
-                    
+
                     {/* Custom Moisture Level */}
                     {moistureLevel === "Custom" && moistureMode === "Automatic" && (
                         <div className="mt-4">
@@ -147,14 +188,30 @@ const IrrigationSettingPopup = ({ onClose }) => {
                     )}
                 </div>
 
-                {/* Action Buttons */}
                 <div className="mt-6 flex justify-between">
                     <button onClick={onClose} className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 transition">
                         Close
                     </button>
-                    <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+                    <button
+                        onClick={() => {
+                            if (!moistureMode) {
+                                console.error("moistureMode is null or undefined");
+                                return;
+                            }
+
+                            const key = moistureMode.toLowerCase();
+                            if (!(key in data)) {
+                                console.error(`Key ${key} not found in data`);
+                                return;
+                            }
+
+                            onSave(data[key], key);
+                        }}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                    >
                         Save
                     </button>
+
                 </div>
             </motion.div>
         </div>
