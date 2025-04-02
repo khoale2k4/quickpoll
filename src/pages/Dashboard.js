@@ -21,32 +21,33 @@ export default function YoloFarmDashboard() {
     amountofwater: {
       value: -1,
       mode: null,
-      description: ""
+      description: "Amount of water supplied to the plant, measured in milliliters (ml)."
     },
     moisture: {
       value: -1,
       mode: null,
-      description: ""
+      description: "Soil moisture level, measured in percentage (%)."
     },
     temperature: {
       value: -1,
       mode: null,
-      description: ""
+      description: "Ambient temperature, measured in degrees Celsius (°C)."
     },
     light: {
       value: -1,
       mode: null,
-      description: ""
+      description: "Light intensity in the environment, measured in lux."
     },
     humidity: {
       value: -1,
       mode: null,
-      description: ""
+      description: "Air humidity level, measured in percentage (%)."
     }
   });
 
+
   const [dataTypes, setDataTypes] = useState(['amountofwater', 'moisture', 'light', 'humidity', 'temperature']);
-  const [modes, setModes] = useState(['automated', 'scheduled', 'manual'])
+  const [modes, setModes] = useState(['automated', 'scheduled', 'manual']);
 
   const getDataAttributes = (type) => {
     const attributes = {
@@ -65,6 +66,51 @@ export default function YoloFarmDashboard() {
     navigate(`/${value}`);
   };
 
+  const fetchMode = async () => {
+    for (const type of ["irrigationsettings", "temperaturesettings", "lightsettings"]) {
+      for (const mode of modes) {
+        const apiUrl = `${process.env.REACT_APP_HOST}/api/${type}/${mode}`;
+        try {
+          const getResponse = await axios.get(apiUrl);
+          if (getResponse.data && getResponse.data.length > 0) {
+            const data = getResponse.data;
+            // console.log(type, mode, data);
+
+            if(type == "irrigationsettings") {
+              for (const _mode of ['amountofwater', 'moisture', 'humidity'])
+              setInfoMap(prevInfoMap => ({
+                ...prevInfoMap,
+                [_mode]: {
+                  ...prevInfoMap[_mode],  
+                  mode: mode,          
+                }
+              }));
+            } else if(type == "temperaturesettings"){
+              setInfoMap(prevInfoMap => ({
+                ...prevInfoMap,
+                ["temperature"]: {
+                  ...prevInfoMap["temperature"],  
+                  mode: mode,          
+                }
+              }));
+            } else {
+              setInfoMap(prevInfoMap => ({
+                ...prevInfoMap,
+                ["light"]: {
+                  ...prevInfoMap["light"],  
+                  mode: mode,          
+                }
+              }));
+            }
+          }
+        } catch (error) {
+          console.error(`Lỗi khi lấy dữ liệu từ ${apiUrl}:`, error);
+        }
+      }
+    }
+  };
+
+
   const saveSetting = async (setting, type, saveMode) => {
     console.log("Saved");
     try {
@@ -81,7 +127,7 @@ export default function YoloFarmDashboard() {
 
       const response = await axios.post(`${process.env.REACT_APP_HOST}/api/${type}/${saveMode}`, setting);
       console.log("Lưu thành công:", response.data);
-      if(type == "irrigationsettings") {
+      if (type == "irrigationsettings") {
         setSettingIrrigation(false);
       } else if (type == "temperaturesettings") {
         setSettingTemperature(false);
@@ -125,6 +171,7 @@ export default function YoloFarmDashboard() {
       for (const dataType of dataTypes) {
         fetchData(dataType);
       }
+      fetchMode();
     }, 1000);
 
     return () => clearInterval(intervalId);
@@ -172,7 +219,7 @@ export default function YoloFarmDashboard() {
             value={infoMap[type]?.value ?? "N/A"}
             unit={unit}
             description={infoMap[type]?.description ?? "Không có dữ liệu"}
-            mode={infoMap[type]?.mode}
+            mode={infoMap[type]?.mode?infoMap[type]?.mode.toUpperCase():""}
             bgColor={bgColor}
             icon={icon}
             onSettingsClick={() => {
