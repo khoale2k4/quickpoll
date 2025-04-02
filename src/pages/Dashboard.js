@@ -119,6 +119,7 @@ export default function YoloFarmDashboard() {
         const getResponse = await axios.get(apiUrl);
         if (getResponse.data && getResponse.data.length > 0) {
           const data = getResponse.data[0];
+          console.log("getResponse.data[0]", data)
           const settingId = data.id;
           const response = await axios.delete(`${process.env.REACT_APP_HOST}/api/${type}/${mode}/${settingId}`)
           console.log(response);
@@ -233,7 +234,7 @@ export default function YoloFarmDashboard() {
 
       {isSettingIrrigation && <IrrigationSettingPopup isOpen={isSettingIrrigation} onClose={() => setSettingIrrigation(false)} onSave={(setting, mode) => { saveSetting(setting, "irrigationsettings", mode); }} />}
       {isSettingTemperature && <TemperaturePopup isOpen={isSettingTemperature} onClose={() => setSettingTemperature(false)} onSave={(setting, mode) => { saveSetting(setting, "temperaturesettings", mode); }} />}
-      {isSettingLighting && <LightSettingPopup isOpen={isSettingLighting} onClose={() => setSettingLighting(false)} />}
+      {isSettingLighting && <LightSettingPopup isOpen={isSettingLighting} onClose={() => setSettingLighting(false)} onSave={(setting, mode) => { saveSetting(setting, "lightsettings", mode); }}/>}
     </div>
   );
 

@@ -14,18 +14,30 @@ const LightingSettingPopup = ({ onClose, onSave }) => {
   const [showPopup, setShowPopup] = useState(false);
   const [currentSchedule, setCurrentSchedule] = useState(null);
   const [modes, setModes] = useState(['automated', 'scheduled', 'manual'])
+  const minMaxLightValue = [200, 1400];
 
   const updateSchedule = (newSchedule) => {
     setCurrentSchedule(newSchedule);
     setShowPopup(false);
   }
 
+  const Scheduler = {
+    id: 1,
+  }
+
+  const DailyScheduler = {
+    duration: 0, // number
+    time: '12:00:00', // hh:mm:ss
+  }
+
   const data = {
     automated: {
       farm: {
-        "id": 1
+        id: 1
       },
       sendWarning: isNotify?"ON":"OFF",
+      min: minMaxLightValue[0],
+      max: minMaxLightValue[1],
       lower: lightRange[0],
       upper: lightRange[1]
     },
@@ -33,7 +45,7 @@ const LightingSettingPopup = ({ onClose, onSave }) => {
       farm: {
         id: 1
       },
-      sunShade: lightOn
+      turnOn: lightOn?"ON":"OFF"
     },
     scheduled: {
       farm: {

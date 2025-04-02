@@ -36,9 +36,36 @@ const IrrigationSettingPopup = ({ onClose, onSave }) => {
         }
     }
 
+    const scheduler = {
+        daily:{
+            duration: 0,
+            time: "12:00:00",
+            irrigationScheduled: {
+                id: 1
+            }
+        },
+        weekly: {
+            duration: 0,
+            time: "12:00:00",
+            irrigationScheduled: {
+                id: 1
+            },
+            dayOfWeeks: [],
+        },
+        monthly: {
+            duration: 0,
+            time: "12:00:00",
+            irrigationScheduled: {
+                id: 1
+            },
+            days: [],
+        }
+    }
+
     const updateSchedule = (newSchedule) => {
         setCurrentSchedule(newSchedule);
         setShowPopup(false);
+        console.log(currentSchedule);
     };
 
     const fetchSetting = async () => {
