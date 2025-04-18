@@ -13,7 +13,8 @@ const IrrigationSettingPopup = ({ onClose, onSave }) => {
     const [dangerBehavior, setDangerBehavior] = useState("Warn and take action");
     const [isWateringOn, setIsWateringOn] = useState(false);
     const [currentSchedule, setCurrentSchedule] = useState(null);
-    const [modes, setModes] = useState(['automated', 'scheduled', 'manual'])
+    const [modes, setModes] = useState(['automated', 'scheduled', 'manual']);
+    const schedulerType = ['daily', 'weekly', 'monthly'];
     const data = {
         automated: {
             farm: {
@@ -32,7 +33,8 @@ const IrrigationSettingPopup = ({ onClose, onSave }) => {
             farm: {
                 id: 1
             },
-            dangerSafeBehavior: dangerBehavior
+            dangerSafeBehavior: dangerBehavior,
+            scheduler: currentSchedule
         }
     }
 
@@ -63,9 +65,10 @@ const IrrigationSettingPopup = ({ onClose, onSave }) => {
     }
 
     const updateSchedule = (newSchedule) => {
+        if(newSchedule.daysOfWeek) newSchedule.daysOfWeek = newSchedule.daysOfWeek.map(day => day.toUpperCase());
         setCurrentSchedule(newSchedule);
+        console.log('newSchedule', newSchedule);
         setShowPopup(false);
-        console.log(currentSchedule);
     };
 
     const fetchSetting = async () => {
@@ -74,10 +77,31 @@ const IrrigationSettingPopup = ({ onClose, onSave }) => {
             const getResponse = await axios.get(apiUrl);
             if (getResponse.data && getResponse.data.length > 0) {
                 const data = getResponse.data[0];
-                setMoistureMode(mode.charAt(0).toUpperCase() + mode.slice(1));
-                setMoistureLevel(data.moistureLevel);
-                setDangerBehavior(data.dangerSafeBehavior);
+                setMoistureMode((mode.charAt(0).toUpperCase() + mode.slice(1))?? "Automated");
+                setMoistureLevel(data.moistureLevel?? "Dry");
+                setDangerBehavior(data.dangerSafeBehavior?? "Warn and take action");
                 setIsWateringOn(data.watering === "ON");
+                if(mode === 'scheduled'){
+                    for(const type of schedulerType) {
+                        const apiUrl = `${process.env.REACT_APP_HOST}/api/schedulers/${type}`;
+                        const getResponse = await axios.get(apiUrl);
+                        if (getResponse.data && getResponse.data.length > 0) {
+                            const resData = getResponse.data[0];
+                            console.log('resData', resData);
+                            const data = {
+                                type: type,
+                                duration: resData.duration,
+                                time: resData.time,
+                                daysOfMonth: type == 'monthly'?resData.dateList.map(date => date.split('-')[2]): null,
+                                daysOfWeek: type == 'weekly'?resData.dateList: null,
+                            };
+                            setCurrentSchedule(data);
+                            setShowPopup(false);
+                        } else {
+                            console.error(`No data found for ${type}`);
+                        }
+                    }
+                }
             }
         }
     }
@@ -161,9 +185,9 @@ const IrrigationSettingPopup = ({ onClose, onSave }) => {
                             {currentSchedule ? (
                                 <div className="border p-4 rounded-lg">
                                     <p className="font-medium">
-                                        {currentSchedule.type === "monthly" ? `Days: ${currentSchedule.daysOfMonth.join(", ")}` : ""}
-                                        {currentSchedule.type === "weekly" ? `Days: ${currentSchedule.daysOfWeek.join(", ")}` : ""}
-                                        {currentSchedule.type === "daily" ? `Time: ${currentSchedule.time}` : ""}
+                                        {currentSchedule.type === "monthly" && currentSchedule.daysOfMonth ? `Days: ${currentSchedule.daysOfMonth.join(", ")}` : ""}
+                                        {currentSchedule.type === "weekly" && currentSchedule.daysOfWeek ? `Days: ${currentSchedule.daysOfWeek.join(", ")}` : ""}
+                                        {currentSchedule.type === "daily" && currentSchedule.time ? `Time: ${currentSchedule.time}` : ""}
                                     </p>
                                     <p className="text-sm text-gray-500">
                                         {currentSchedule.type.charAt(0).toUpperCase() + currentSchedule.type.slice(1)} at {currentSchedule.time} for {currentSchedule.duration} seconds

@@ -38,7 +38,8 @@ const TemperaturePopup = ({ onClose, onSave }) => {
       farm: {
         id: 1
       },
-      sendWarning: isNotify
+      sendWarning: isNotify ? "ON" : "OFF",
+      scheduler: currentSchedule
     }
   }
 
@@ -53,6 +54,28 @@ const TemperaturePopup = ({ onClose, onSave }) => {
         setUpperLimit(data.upper);
         setIsNotify(data.sendWarning == "ON");
         setIsSunshadeOn(data.sunShade);
+
+        if (mode === 'scheduled') {
+          for (const type of ['daily', 'weekly', 'monthly']) {
+            const apiUrl = `${process.env.REACT_APP_HOST}/api/schedulers/${type}`;
+            const getResponse = await axios.get(apiUrl);
+            if (getResponse.data && getResponse.data.length > 0) {
+              const resData = getResponse.data[0];
+              console.log('resData', resData);
+              const data = {
+                type: type,
+                duration: resData.duration,
+                time: resData.time,
+                daysOfMonth: type == 'monthly' ? resData.dateList.map(date => date.split('-')[2]) : null,
+                daysOfWeek: type == 'weekly' ? resData.dateList : null,
+              };
+              setCurrentSchedule(data);
+              setShowPopup(false);
+            } else {
+              console.error(`No data found for ${type}`);
+            }
+          }
+        }
       }
     }
   }
