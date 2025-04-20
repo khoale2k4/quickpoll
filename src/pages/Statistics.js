@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     LineChart,
     Line,
@@ -9,132 +9,222 @@ import {
     Bar,
     Cell,
     ResponsiveContainer,
-    Dot,
 } from "recharts";
 import { ArrowLeft, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 import axios from "axios";
-import CustomDot from "../components/CustomDot";
 
 export default function DashboardStatistics() {
     const [activeChart, setActiveChart] = useState("Moisture");
-    const [curData, setCurData] = useState([]);
+    const [timeRange, setTimeRange] = useState("week"); // week, month, year
+    const [processedData, setProcessedData] = useState([]);
     const [infoMap, setInfoMap] = useState({
-        showingDataFrom: "2025-02-20",
-        lastUpdated: "2025-02-20 11:40",
-        lastMeasured: "20%",
-        averageValue: "30%",
-        selectedDate: "Tue Jan 21 2025 07:00:00 GMT+0700 (Giờ Đông Dương)",
-        selectedValue: "21%",
+        showingDataFrom: "",
+        lastUpdated: "",
+        lastMeasured: "",
+        averageValue: "",
     });
 
     const navigate = useNavigate();
 
     const handleStatisticsClick = () => {
         navigate("/dashboard");
-    }
+    };
 
-    const constructData = (data) => {
-        console.log(data);
-        if (!data || data.length === 0) {
-            return {
-                transformedData: [],
-                minDate: null,
-                maxDate: null,
-                averageValue: null,
-                mostRecentValue: null,
-            };
-        }
+    // Process data based on selected time range
+    const processData = (rawData, range) => {
+        if (!rawData || rawData.length === 0) return [];
 
-        const transformedData = data
-            .map((record) => {
-                if (record.recordTime === null) {
-                    record.recordTime = new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toISOString();
-                }
-                const date = new Date(record.recordTime);
-                if(!record) return {};
-                return {
-                    date,
-                    day: date.getDate(),
-                    value: record.recordValue,
-                };
-            })
+        // Convert and sort data
+        const convertedData = rawData
+            .map(record => ({
+                date: new Date(record.recordTime),
+                value: record.recordValue
+            }))
             .sort((a, b) => a.date - b.date);
 
-        const minDate = transformedData[0].date;
-        const maxDate = transformedData[transformedData.length - 1].date;
-        const total = transformedData.reduce((sum, record) => sum + record.value, 0);
-        const averageValue = total / transformedData.length;
-        const mostRecentValue = transformedData[transformedData.length - 1].value;
+        const now = new Date();
+        let filteredData = [];
+        let groupedData = [];
 
-        return {
-            transformedData,
-            minDate,
-            maxDate,
-            averageValue,
-            mostRecentValue,
-        };
+        switch (range) {
+            case "week":
+                // Last 7 days
+                const weekAgo = new Date(now);
+                weekAgo.setDate(now.getDate() - 7);
+                filteredData = convertedData.filter(item => item.date >= weekAgo);
+                // Group by day
+                groupedData = filteredData.reduce((acc, item) => {
+                    const day = item.date.getDate();
+                    if (!acc[day]) {
+                        acc[day] = {
+                            date: item.date,
+                            day: `${item.date.getDate()}/${item.date.getMonth() + 1}`,
+                            values: []
+                        };
+                    }
+                    acc[day].values.push(item.value);
+                    return acc;
+                }, {});
+                break;
+
+            case "month":
+                // Last 30 days
+                const monthAgo = new Date(now);
+                monthAgo.setDate(now.getDate() - 30);
+                filteredData = convertedData.filter(item => item.date >= monthAgo);
+                // Group by day
+                groupedData = filteredData.reduce((acc, item) => {
+                    const day = item.date.getDate();
+                    if (!acc[day]) {
+                        acc[day] = {
+                            date: item.date,
+                            day: `${item.date.getDate()}/${item.date.getMonth() + 1}`,
+                            values: []
+                        };
+                    }
+                    acc[day].values.push(item.value);
+                    return acc;
+                }, {});
+                break;
+
+            case "year":
+                // Last 12 months
+                const yearAgo = new Date(now);
+                yearAgo.setFullYear(now.getFullYear() - 1);
+                filteredData = convertedData.filter(item => item.date >= yearAgo);
+                // Group by month and calculate average
+                groupedData = filteredData.reduce((acc, item) => {
+                    const month = item.date.getMonth();
+                    const year = item.date.getFullYear();
+                    const key = `${year}-${month}`;
+                    
+                    if (!acc[key]) {
+                        acc[key] = {
+                            date: item.date,
+                            month: `${month + 1}/${year}`,
+                            values: []
+                        };
+                    }
+                    acc[key].values.push(item.value);
+                    return acc;
+                }, {});
+                break;
+
+            default:
+                filteredData = convertedData;
+        }
+
+        // Calculate averages for grouped data
+        const result = Object.values(groupedData).map(group => ({
+            ...group,
+            value: group.values.reduce((sum, val) => sum + val, 0) / group.values.length
+        }));
+
+        // Update info map
+        if (result.length > 0) {
+            const minDate = result[0].date;
+            const maxDate = result[result.length - 1].date;
+            const total = result.reduce((sum, item) => sum + item.value, 0);
+            const average = total / result.length;
+            const lastValue = result[result.length - 1].value;
+
+            setInfoMap({
+                showingDataFrom: minDate,
+                lastUpdated: maxDate,
+                lastMeasured: `${lastValue.toFixed(1)}${getUnit(activeChart)}`,
+                averageValue: average.toFixed(1),
+            });
+        }
+
+        return result;
+    };
+
+    const fetchData = async () => {
+        try {
+            let endpoint = "";
+            switch (activeChart) {
+                case "Moisture":
+                    endpoint = "moisture";
+                    break;
+                case "Temperature":
+                    endpoint = "temperature";
+                    break;
+                case "Lighting":
+                    endpoint = "light";
+                    break;
+                case "Humidity":
+                    endpoint = "humidity";
+                    break;
+                case "AmountOfWater":
+                    endpoint = "amountofwater";
+                    break;
+                default:
+                    endpoint = "moisture";
+            }
+
+            const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/${endpoint}/1`);
+            const processed = processData(response.data, timeRange);
+            setProcessedData(processed);
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        }
     };
 
     useEffect(() => {
-        const fetchMoistureData = async () => {
-            try {
-                const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/moisture/1`);
-                const data = constructData(response.data);
-                console.log(data);
-                setCurData(data.transformedData);
-                setInfoMap({
-                    showingDataFrom: data.minDate,
-                    lastUpdated: data.maxDate,
-                    averageValue: data.averageValue,
-                    lastMeasured: data.mostRecentValue,
-                    selectedDate: infoMap.selectedDate,
-                    selectedValue: infoMap.selectedValue
-                },)
-            } catch (error) {
-                console.error("Error fetching data:", error);
-            }
-        };
-        const fetchTemperaturData = async () => {
-            try {
-                const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/temperature/1`);
-                const data = constructData(response.data);
-                setCurData(data.transformedData);
-                setInfoMap({
-                    showingDataFrom: data.minDate,
-                    lastUpdated: data.maxDate,
-                    averageValue: data.averageValue,
-                    lastMeasured: data.mostRecentValue,
-                    selectedDate: infoMap.selectedDate,
-                    selectedValue: infoMap.selectedValue
-                },)
-            } catch (error) {
-                console.error("Error fetching data:", error);
-            }
-        };
-        const fetchLightningData = async () => {
-            try {
-                const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/light/1`);
-                const data = constructData(response.data);
-                setCurData(data.transformedData);
-                setInfoMap({
-                    showingDataFrom: data.minDate,
-                    lastUpdated: data.maxDate,
-                    averageValue: data.averageValue,
-                    lastMeasured: data.mostRecentValue,
-                    selectedDate: infoMap.selectedDate,
-                    selectedValue: infoMap.selectedValue
-                },)
-            } catch (error) {
-                console.error("Error fetching data:", error);
-            }
-        };
+        fetchData();
+    }, [activeChart, timeRange]);
 
-        if (activeChart === "Moisture") fetchMoistureData();
-        else if (activeChart === "Temperature") fetchTemperaturData();
-        else fetchLightningData();
-    }, [activeChart]);
+    const getYAxisDomain = () => {
+        switch (activeChart) {
+            case "Moisture":
+                return [0, 100];
+            case "Temperature":
+                return [0, 50]; // Adjusted for more realistic temperature range
+            case "Lighting":
+                return [250, 2000];
+            case "Humidity":
+                return [0, 100];
+            case "AmountOfWater":
+                return [0, 5000]; // Assuming ml as unit
+            default:
+                return [0, 100];
+        }
+    };
+
+    const getUnit = (chartType) => {
+        switch (chartType) {
+            case "Moisture":
+                return "%";
+            case "Temperature":
+                return "°C";
+            case "Lighting":
+                return "lux";
+            case "Humidity":
+                return "%";
+            case "AmountOfWater":
+                return "ml";
+            default:
+                return "";
+        }
+    };
+
+    const getChartColor = () => {
+        switch (activeChart) {
+            case "Moisture":
+                return "#66C2FF";
+            case "Temperature":
+                return "#F97316";
+            case "Lighting":
+                return "#A020F0";
+            case "Humidity":
+                return "#4ADE80";
+            case "AmountOfWater":
+                return "#3B82F6";
+            default:
+                return "#66C2FF";
+        }
+    };
 
     return (
         <div className="p-6 max-w-5xl mx-auto">
@@ -149,94 +239,69 @@ export default function DashboardStatistics() {
                 </button>
             </div>
 
-            <div className="flex space-x-2 mb-4 justify-center">
-                {["Moisture", "Temperature", "Lighting"].map((chart) => (
+            <div className="flex flex-wrap gap-2 mb-4 justify-center">
+                {["Moisture", "Temperature", "Lighting", "Humidity", "AmountOfWater"].map((chart) => (
                     <button
                         key={chart}
                         onClick={() => setActiveChart(chart)}
                         className={`px-4 py-2 rounded ${activeChart === chart ? "bg-blue-500 text-white" : "bg-gray-100 hover:bg-gray-200"
                             }`}
                     >
-                        {chart}
+                        {chart === "AmountOfWater" ? "Water Amount" : chart}
                     </button>
                 ))}
             </div>
 
-            <h2 className="text-xl font-semibold text-center mb-2">{activeChart}</h2>
+            <div className="flex flex-wrap gap-2 mb-4 justify-center">
+                {["week", "month", "year"].map((range) => (
+                    <button
+                        key={range}
+                        onClick={() => setTimeRange(range)}
+                        className={`px-4 py-2 rounded ${timeRange === range ? "bg-green-500 text-white" : "bg-gray-100 hover:bg-gray-200"
+                            }`}
+                    >
+                        {range.charAt(0).toUpperCase() + range.slice(1)}
+                    </button>
+                ))}
+            </div>
+
+            <h2 className="text-xl font-semibold text-center mb-2">
+                {activeChart === "AmountOfWater" ? "Water Amount" : activeChart} ({timeRange}ly view)
+            </h2>
 
             <div className="flex flex-col md:flex-row md:space-x-8">
                 <div className="md:flex-1 h-[300px]">
-                    {activeChart === "Moisture" && (
+                    {activeChart === "Temperature" || activeChart === "AmountOfWater" ? (
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={curData}>
-                                <XAxis dataKey="day" stroke="#A0A0A0" />
-                                <YAxis domain={[0, 100]} stroke="#A0A0A0" />
-                                {/* <Tooltip cursor={{ strokeDasharray: "3 3", pointerEvents: "none" }} /> */}
-                                <Line
-                                    type="monotone"
-                                    dataKey="value"
-                                    stroke="#66C2FF"
-                                    strokeWidth={3}
-                                    dot={(dotProps) => (
-                                        <CustomDot
-                                            key={`dot-${dotProps.index}`}
-                                            {...dotProps}
-                                            selectedDate={infoMap.selectedDate}
-                                            onClick={(payload) =>
-                                                setInfoMap((prev) => ({
-                                                    ...prev,
-                                                    selectedValue: payload.value,
-                                                    selectedDate: payload.date,
-                                                }))
-                                            }
-                                        />
-                                    )}
+                            <BarChart data={processedData}>
+                                <XAxis dataKey={timeRange === "year" ? "month" : "day"} stroke="#A0A0A0" />
+                                <YAxis domain={getYAxisDomain()} stroke="#A0A0A0" />
+                                <Tooltip 
+                                    formatter={(value) => [`${value} ${getUnit(activeChart)}`, activeChart === "AmountOfWater" ? "Water Amount" : activeChart]}
+                                    labelFormatter={(label) => `Date: ${label}`}
                                 />
-                            </LineChart>
-
-                        </ResponsiveContainer>
-                    )}
-
-                    {activeChart === "Temperature" && (
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={curData}>
-                                <XAxis dataKey="day" stroke="#A0A0A0" />
-                                <YAxis domain={[0, 100]} stroke="#A0A0A0" />
-                                <Tooltip cursor={{ fill: "rgba(200,200,200,0.2)" }} />
-                                <Bar dataKey="value" fill="#F97316">
-                                    {curData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill="#F97316" />
+                                <Bar dataKey="value" fill={getChartColor()}>
+                                    {processedData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={getChartColor()} />
                                     ))}
                                 </Bar>
                             </BarChart>
                         </ResponsiveContainer>
-                    )}
-
-                    {activeChart === "Lighting" && (
+                    ) : (
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={curData}>
-                                <XAxis dataKey="day" stroke="#A0A0A0" />
-                                <YAxis domain={[250, 2000]} stroke="#A0A0A0" />
-                                {/* <Tooltip cursor={{ strokeDasharray: "3 3" }} /> */}
+                            <LineChart data={processedData}>
+                                <XAxis dataKey={timeRange === "year" ? "month" : "day"} stroke="#A0A0A0" />
+                                <YAxis domain={getYAxisDomain()} stroke="#A0A0A0" />
+                                <Tooltip 
+                                    formatter={(value) => [`${value} ${getUnit(activeChart)}`, activeChart === "AmountOfWater" ? "Water Amount" : activeChart]}
+                                    labelFormatter={(label) => `Date: ${label}`}
+                                />
                                 <Line
                                     type="monotone"
                                     dataKey="value"
-                                    stroke="#A020F0"
+                                    stroke={getChartColor()}
                                     strokeWidth={3}
-                                    dot={(dotProps) => (
-                                        <CustomDot
-                                            key={`dot-${dotProps.index}`}
-                                            {...dotProps}
-                                            selectedDate={infoMap.selectedDate}
-                                            onClick={(payload) =>
-                                                setInfoMap((prev) => ({
-                                                    ...prev,
-                                                    selectedValue: payload.value,
-                                                    selectedDate: payload.date,
-                                                }))
-                                            }
-                                        />
-                                    )}
+                                    dot={{ r: 4 }}
                                 />
                             </LineChart>
                         </ResponsiveContainer>
@@ -245,24 +310,23 @@ export default function DashboardStatistics() {
 
                 <div className="mt-4 md:mt-0 md:w-64 p-4 border rounded-lg bg-gray-50">
                     <p>
-                        Showing data from <strong>{new Date(infoMap.showingDataFrom).toLocaleDateString("vi-VN")}</strong>
+                        Showing data from <strong>
+                            {infoMap.showingDataFrom ? new Date(infoMap.showingDataFrom).toLocaleDateString("vi-VN") : "N/A"}
+                        </strong>
                     </p>
                     <p>
-                        Last updated: <strong>{new Date(infoMap.lastUpdated).toLocaleDateString("vi-VN")}</strong>
+                        Last updated: <strong>
+                            {infoMap.lastUpdated ? new Date(infoMap.lastUpdated).toLocaleDateString("vi-VN") : "N/A"}
+                        </strong>
                     </p>
                     <hr className="my-2" />
                     <p>
-                        Last measured: <strong>{infoMap.lastMeasured}</strong>
-                    </p>
-                    {infoMap && <p>
-                        Average value: <strong>{Number(infoMap.averageValue).toFixed(2)}</strong>
-                    </p>}
-                    <hr className="my-2" />
-                    <p>
-                        Selected date: <strong>{new Date(infoMap.selectedDate).toLocaleDateString("vi-VN")}</strong>
+                        Last measured: <strong>{infoMap.lastMeasured || "N/A"}</strong>
                     </p>
                     <p>
-                        Selected value: <strong>{infoMap.selectedValue}</strong>
+                        Average value: <strong>
+                            {infoMap.averageValue ? `${infoMap.averageValue}${getUnit(activeChart)}` : "N/A"}
+                        </strong>
                     </p>
                 </div>
             </div>
