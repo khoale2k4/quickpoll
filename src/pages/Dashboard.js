@@ -1,6 +1,6 @@
 import { Bell, BarChart, User, Settings, History  } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Card from "../components/Card.js";
 import IrrigationSettingPopup from "../components/IrrigationSettingPopup.js";
 import LightSettingPopup from "../components/LightSettingPopup.js";
@@ -12,11 +12,37 @@ export default function YoloFarmDashboard() {
   const [isSettingIrrigation, setSettingIrrigation] = useState(false);
   const [isSettingTemperature, setSettingTemperature] = useState(false);
   const [isSettingLighting, setSettingLighting] = useState(false);
+  const [upcomingCount, setUpcomingCount] = useState(0);
   
   const navigate = useNavigate();
   const handleIconClick = (value) => () => {
     navigate(`/${value}`);
   };
+
+  useEffect(() => {
+    const fetchReminders = async () => {
+      try {
+        const res = await fetch("http://localhost:8080/api/reminders/user/username1");
+        if (!res.ok) throw new Error("Network response was not ok");
+        const data = await res.json();
+
+        const upcoming = data.filter((task) => {
+          const isDone = task.isDone;
+          const reminderDate = new Date(task.reminderTime);
+          const now = new Date();
+          return !isDone && reminderDate >= now;
+        });
+
+        setUpcomingCount(upcoming.length);
+      } catch (err) {
+        console.error("Error fetching reminders in Dashboard:", err);
+      }
+    };
+
+    fetchReminders();
+  }, []);
+
+
 
   return (
     <div className="p-6 max-w-lg md:max-w-2xl mx-auto space-y-6">
@@ -35,10 +61,17 @@ export default function YoloFarmDashboard() {
             className="cursor-pointer hover:text-green-700"
             onClick={handleIconClick("action")}
             />
-          <Bell 
-            className="cursor-pointer hover:text-green-700" 
-            onClick={handleIconClick("reminder")}
-          />
+          <div className="relative">
+            <Bell
+              className="cursor-pointer hover:text-green-700"
+              onClick={handleIconClick("reminder")}
+            />
+            {upcomingCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
+                {upcomingCount}
+              </span>
+            )}
+          </div>
           <BarChart 
             className="cursor-pointer hover:text-green-700" 
             onClick={handleIconClick("statistics")}/>
