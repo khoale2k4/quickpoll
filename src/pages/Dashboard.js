@@ -7,7 +7,6 @@ import LightSettingPopup from "../components/LightSettingPopup.js";
 import TemperaturePopup from "../components/TemperatureSettingPopup.js";
 
 import { LuLeaf } from "react-icons/lu";
-import { useEffect } from "react";
 import axios from "axios";
 import NotificationModal from "../components/MessageModal.js";
 
@@ -15,6 +14,7 @@ export default function YoloFarmDashboard() {
   const [isSettingIrrigation, setSettingIrrigation] = useState(false);
   const [isSettingTemperature, setSettingTemperature] = useState(false);
   const [isSettingLighting, setSettingLighting] = useState(false);
+  const [upcomingCount, setUpcomingCount] = useState(0);
   const [message, setMessage] = useState("");
   const [openMessage, setOpenMessage] = useState(false);
   const [error, setError] = useState(false);
