@@ -17,6 +17,7 @@ export default function YoloFarmDashboard() {
   const [isSettingLighting, setSettingLighting] = useState(false);
   const [message, setMessage] = useState("");
   const [openMessage, setOpenMessage] = useState(false);
+  const [error, setError] = useState(false);
   const [infoMap, setInfoMap] = useState({
     amountofwater: {
       value: -1,
@@ -50,7 +51,7 @@ export default function YoloFarmDashboard() {
     [
       'amountofwater',
       'moisture',
-      'light', 
+      'light',
       'humidity',
       'temperature']);
   const [modes, setModes] = useState(['automated', 'scheduled', 'manual']);
@@ -121,7 +122,7 @@ export default function YoloFarmDashboard() {
   const saveSetting = async (setting, type, saveMode) => {
     // console.log("Saved");
     try {
-      for(const scheduleType of ["monthly", "weekly", "daily"]) {
+      for (const scheduleType of ["monthly", "weekly", "daily"]) {
         const apiUrl = `${process.env.REACT_APP_HOST}/api/schedulers/${scheduleType}`;
         const getResponse = await axios.get(apiUrl);
         if (getResponse.data && getResponse.data.length > 0) {
@@ -178,12 +179,14 @@ export default function YoloFarmDashboard() {
       } else {
         setSettingLighting(false);
       }
+      setError(false);
       setOpenMessage(true);
       setMessage("Lưu cài đặt thành công!");
     } catch (err) {
       console.error("Lỗi trong saveSetting:", err);
+      setError(true);
       setOpenMessage(true);
-      setMessage("Lỗi khi lưu cài đặt: ", err);
+      setMessage("Lỗi khi lưu cài đặt: ", err, "Vui lòng thử lại");
     }
   };
 
@@ -228,8 +231,8 @@ export default function YoloFarmDashboard() {
   }, []);
 
   return (
-    <div className="p-6 max-w-lg md:max-w-2xl mx-auto space-y-6">
-      {openMessage && <NotificationModal message={message} onClose={() => setOpenMessage(false)} />}
+    <div className="p-6 max-w-lg md:max-w-2xl mx-auto">
+      {openMessage && <NotificationModal message={message} onClose={() => setOpenMessage(false)} success={!error} />}
       <div className="flex flex-col md:flex-row items-center">
         <div className="w-16 h-16 bg-green-200 flex items-center justify-center rounded-xl">
           <LuLeaf className="w-12 h-12 text-green-500 " />
@@ -263,27 +266,29 @@ export default function YoloFarmDashboard() {
         const { unit, bgColor, icon } = getDataAttributes(type);
 
         return (
-          <Card
-            key={type}
-            title={type.charAt(0).toUpperCase() + type.slice(1)}
-            value={
-              typeof infoMap[type]?.value === 'number'
-                ? (Number.isInteger(infoMap[type].value)
-                  ? infoMap[type].value
-                  : parseFloat(infoMap[type].value.toFixed(4)))
-                : infoMap[type]?.value ?? "N/A"
-            }
-            unit={unit}
-            description={infoMap[type]?.description ?? "Không có dữ liệu"}
-            mode={infoMap[type]?.mode ? infoMap[type]?.mode.toUpperCase() : ""}
-            bgColor={bgColor}
-            icon={icon}
-            onSettingsClick={() => {
-              if (type === 'amountofwater' || type === 'moisture' || type === 'humidity') setSettingIrrigation(true);
-              if (type === 'temperature') setSettingTemperature(true);
-              if (type === 'light') setSettingLighting(true);
-            }}
-          />
+          <div className="pt-4">
+            <Card
+              key={type}
+              title={type.charAt(0).toUpperCase() + type.slice(1)}
+              value={
+                typeof infoMap[type]?.value === 'number'
+                  ? (Number.isInteger(infoMap[type].value)
+                    ? infoMap[type].value
+                    : parseFloat(infoMap[type].value.toFixed(4)))
+                  : infoMap[type]?.value ?? "N/A"
+              }
+              unit={unit}
+              description={infoMap[type]?.description ?? "Không có dữ liệu"}
+              mode={infoMap[type]?.mode ? infoMap[type]?.mode.toUpperCase() : ""}
+              bgColor={bgColor}
+              icon={icon}
+              onSettingsClick={() => {
+                if (type === 'amountofwater' || type === 'moisture' || type === 'humidity') setSettingIrrigation(true);
+                if (type === 'temperature') setSettingTemperature(true);
+                if (type === 'light') setSettingLighting(true);
+              }}
+            />
+          </div>
         );
       })}
 

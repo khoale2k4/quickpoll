@@ -1,14 +1,31 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 
 import { LuLeaf } from "react-icons/lu";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import NotificationModal from "../components/MessageModal.js";
 import { faGithub } from "@fortawesome/free-brands-svg-icons";
 
 const Login = () => {
+  const navigate = useNavigate();
+  const [message, setMessage] = useState("");
+  const [openMessage, setOpenMessage] = useState(false);
+  const [error, setError] = useState(false);
+
+  const handleSubmit = async (e) => {
+    setError(false);
+    setOpenMessage(true);
+    setMessage("Đăng nhập thành công!");
+    setTimeout(() => {
+      navigate("/dashboard");
+    }, 4000);
+  }
+
   return (
     <div className="flex h-screen">
+      {openMessage && <NotificationModal message={message} onClose={() => setOpenMessage(false)} success={!error}/>}
       {/* Left Side */}
       <div className="relative w-1/2 bg-green-200 flex flex-col justify-center items-center text-white">
         {/* Diagonal Shape */}
@@ -86,7 +103,7 @@ const Login = () => {
             </div>
 
             {/* Sign In Button */}
-            <button className="w-full bg-green-700 text-white p-2 mt-4 rounded-md hover:bg-green-900">
+            <button className="w-full bg-green-700 text-white p-2 mt-4 rounded-md hover:bg-green-900" onClick={handleSubmit}>
               Sign In
             </button>
           </div>

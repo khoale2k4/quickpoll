@@ -1,9 +1,12 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
+import NotificationModal from "../components/MessageModal.js";
 
 const Intergration = () => {
-
+    const [message, setMessage] = useState("");
+    const [openMessage, setOpenMessage] = useState(false);
+    const [error, setError] = useState(false);
     const [IntergrationData, setIntergrationData] = useState({
         soil_sensor: false,
         weather_api: false,
@@ -15,17 +18,27 @@ const Intergration = () => {
     };
 
     const handleIconClick = () => {
-        navigate("/register/setup"); 
+        navigate("/register/setup");
     };
 
     const navigate = useNavigate();
 
+    const onDone = () => {
+        navigate("/login");
+    }
+
     const handleSubmit = async (e) => {
-        alert("Clicking submit");
+        e.preventDefault();
+        // alert("Clicking submit");
+        // setError("");
+        setError(false);
+        setOpenMessage(true);
+        setMessage("Đăng ký thành công!");
     }
 
     return (
         <div className="h-screen flex flex-col">
+            {openMessage && <NotificationModal message={message} onClose={() => setOpenMessage(false)} success={!error} onDone={onDone} />}
             <div className="flex items-center gap-8 top-6 left-6 px-8 py-8 ">
                 <FaArrowLeft className="text-3xl cursor-pointer" onClick={handleIconClick} />
                 <h1 className="text-3xl font-semibold">Intergrations</h1>
@@ -49,9 +62,9 @@ const Intergration = () => {
 
                     {/* Toggle */}
                     <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" />
-                    <div
-                        className="
+                        <input type="checkbox" className="sr-only peer" />
+                        <div
+                            className="
                         w-11 h-6 
                         bg-gray-200 
                         rounded-full
@@ -63,25 +76,25 @@ const Intergration = () => {
                         after:w-5 
                         after:transition-all
                         "
-                    ></div>
+                        ></div>
                     </label>
                 </div>
 
                 {/* 2) Weather APIs */}
                 <div className="flex items-start justify-between">
                     <div className="pr-4">
-                    <h2 className="text-lg font-semibold">Weather APIs</h2>
-                    <p className="text-gray-600 opacity-70">
-                        Integration with weather APIs allows the app to access real-time
-                        weather data and forecasts.
-                    </p>
+                        <h2 className="text-lg font-semibold">Weather APIs</h2>
+                        <p className="text-gray-600 opacity-70">
+                            Integration with weather APIs allows the app to access real-time
+                            weather data and forecasts.
+                        </p>
                     </div>
 
                     {/* Toggle */}
                     <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" />
-                    <div
-                        className="
+                        <input type="checkbox" className="sr-only peer" />
+                        <div
+                            className="
                         w-11 h-6 
                         bg-gray-200 
                         rounded-full
@@ -100,28 +113,28 @@ const Intergration = () => {
                         after:w-5 
                         after:transition-all
                         "
-                    ></div>
+                        ></div>
                     </label>
                 </div>
 
                 {/* 3) Predictive Analytics for Yield Optimization */}
                 <div className="flex items-start justify-between">
                     <div className="pr-4">
-                    <h2 className="text-lg font-semibold">
-                        Predictive Analytics for Yield Optimization
-                    </h2>
-                    <p className="text-gray-600 opacity-70">
-                        AI algorithms use past farm data like crop yields, weather, soil
-                        conditions, and farming methods to predict future yields and improve
-                        farming plans.
-                    </p>
+                        <h2 className="text-lg font-semibold">
+                            Predictive Analytics for Yield Optimization
+                        </h2>
+                        <p className="text-gray-600 opacity-70">
+                            AI algorithms use past farm data like crop yields, weather, soil
+                            conditions, and farming methods to predict future yields and improve
+                            farming plans.
+                        </p>
                     </div>
 
                     {/* Toggle */}
                     <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" />
-                    <div
-                        className="
+                        <input type="checkbox" className="sr-only peer" />
+                        <div
+                            className="
                         w-11 h-6 
                         bg-gray-200 
                         rounded-full
@@ -140,20 +153,20 @@ const Intergration = () => {
                         after:w-5 
                         after:transition-all
                         "
-                    ></div>
+                        ></div>
                     </label>
                 </div>
             </div>
 
             <div className="mt-4 flex justify-center">
                 <button
-                className="w-1/2 font-bold bg-green-700 text-white p-2 rounded hover:bg-green-800"
-                onClick={handleSubmit}
+                    className="w-1/2 font-bold bg-green-700 text-white p-2 rounded hover:bg-green-800"
+                    onClick={handleSubmit}
                 >
-                Finish
+                    Finish
                 </button>
             </div>
-            
+
         </div>
     );
 };

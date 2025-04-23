@@ -15,6 +15,7 @@ const IrrigationSettingPopup = ({ onClose, onSave }) => {
     const [currentSchedule, setCurrentSchedule] = useState(null);
     const [modes, setModes] = useState(['automated', 'scheduled', 'manual']);
     const schedulerType = ['daily', 'weekly', 'monthly'];
+    const [isSaving, setIsSaving] = useState(false);
     const data = {
         automated: {
             farm: {
@@ -39,7 +40,7 @@ const IrrigationSettingPopup = ({ onClose, onSave }) => {
     }
 
     const scheduler = {
-        daily:{
+        daily: {
             duration: 0,
             time: "12:00:00",
             irrigationScheduled: {
@@ -65,7 +66,7 @@ const IrrigationSettingPopup = ({ onClose, onSave }) => {
     }
 
     const updateSchedule = (newSchedule) => {
-        if(newSchedule.daysOfWeek) newSchedule.daysOfWeek = newSchedule.daysOfWeek.map(day => day.toUpperCase());
+        if (newSchedule.daysOfWeek) newSchedule.daysOfWeek = newSchedule.daysOfWeek.map(day => day.toUpperCase());
         setCurrentSchedule(newSchedule);
         console.log('newSchedule', newSchedule);
         setShowPopup(false);
@@ -77,12 +78,12 @@ const IrrigationSettingPopup = ({ onClose, onSave }) => {
             const getResponse = await axios.get(apiUrl);
             if (getResponse.data && getResponse.data.length > 0) {
                 const data = getResponse.data[0];
-                setMoistureMode((mode.charAt(0).toUpperCase() + mode.slice(1))?? "Automated");
-                setMoistureLevel(data.moistureLevel?? "Dry");
-                setDangerBehavior(data.dangerSafeBehavior?? "Warn and take action");
+                setMoistureMode((mode.charAt(0).toUpperCase() + mode.slice(1)) ?? "Automated");
+                setMoistureLevel(data.moistureLevel ?? "Dry");
+                setDangerBehavior(data.dangerSafeBehavior ?? "Warn and take action");
                 setIsWateringOn(data.watering === "ON");
-                if(mode === 'scheduled'){
-                    for(const type of schedulerType) {
+                if (mode === 'scheduled') {
+                    for (const type of schedulerType) {
                         const apiUrl = `${process.env.REACT_APP_HOST}/api/schedulers/${type}`;
                         const getResponse = await axios.get(apiUrl);
                         if (getResponse.data && getResponse.data.length > 0) {
@@ -92,8 +93,8 @@ const IrrigationSettingPopup = ({ onClose, onSave }) => {
                                 type: type,
                                 duration: resData.duration,
                                 time: resData.time,
-                                daysOfMonth: type == 'monthly'?resData.dateList.map(date => date.split('-')[2]): null,
-                                daysOfWeek: type == 'weekly'?resData.dateList: null,
+                                daysOfMonth: type == 'monthly' ? resData.dateList.map(date => date.split('-')[2]) : null,
+                                daysOfWeek: type == 'weekly' ? resData.dateList : null,
                             };
                             setCurrentSchedule(data);
                             setShowPopup(false);
@@ -111,7 +112,7 @@ const IrrigationSettingPopup = ({ onClose, onSave }) => {
     }, [])
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -244,7 +245,7 @@ const IrrigationSettingPopup = ({ onClose, onSave }) => {
                         Close
                     </button>
                     <button
-                        onClick={() => {
+                        onClick={async () => {
                             if (!moistureMode) {
                                 console.error("moistureMode is null or undefined");
                                 return;
@@ -256,11 +257,26 @@ const IrrigationSettingPopup = ({ onClose, onSave }) => {
                                 return;
                             }
 
-                            onSave(data[key], key);
+                            setIsSaving(true); 
+
+                            try {
+                                console.log('start saving');
+                                await onSave(data[key], key); 
+                                console.log('on saving');
+                            } catch (error) {
+                                console.error("Failed to save:", error);
+                            } finally {
+                                setIsSaving(false); 
+                            }
                         }}
+
                         className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
                     >
-                        Save
+                        {isSaving ? (
+                            <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                            "Save"
+                        )}
                     </button>
 
                 </div>

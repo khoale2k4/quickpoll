@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import NotificationModal from "../components/MessageModal.js";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -9,9 +10,12 @@ const Register = () => {
     password: "",
   });
 
-  const [error, setError] = useState("");
-  // const navigate = useNavigate();
-  
+  // const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const [message, setMessage] = useState("");
+  const [openMessage, setOpenMessage] = useState(false);
+  const [error, setError] = useState(false);
+
   const passwordToggleRef = useRef(null); // Refers to the checkbox input that toggles the password visibility.
   const passwordRef = useRef(null); // Refers to the password input field.
   const passwordLabelRef = useRef(null); //  Refers to the label (eye icon) used to switch between visible (text) and hidden (password) modes.
@@ -51,10 +55,17 @@ const Register = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const onDone = () => {
+    navigate("/register/setup");
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("Clicking submit");
-    setError("");
+    // alert("Clicking submit");
+    // setError("");
+    setError(false);
+    setOpenMessage(true);
+    setMessage("Tạo tài khoản thành công!");
 
     // try {
     //   const response = await fetch("http://localhost:5000/api/auth/register", {
@@ -79,6 +90,7 @@ const Register = () => {
 
   return (
     <div className="flex items-center justify-center h-screen bg-green-100">
+      {openMessage && <NotificationModal message={message} onClose={() => setOpenMessage(false)} success={!error} onDone={onDone} />}
       <div className="absolute flex top-3 right-10 z-10 h-10 items-center justify-end">
         <span className="flex space-x-2">
           <span>Already have an account?</span>
@@ -106,7 +118,7 @@ const Register = () => {
               type="text"
               name="first_name"
               value={formData.first_name}
-              placeholder="First name"  
+              placeholder="First name"
               onChange={handleChange}
               className="w-full border p-2 rounded"
               required

@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import {
     LineChart,
     Line,
@@ -23,6 +25,8 @@ export default function DashboardStatistics() {
         lastUpdated: "",
         lastMeasured: "",
         averageValue: "",
+        maxValue: 0,
+        minValue: 10000,
     });
 
     const navigate = useNavigate();
@@ -31,11 +35,9 @@ export default function DashboardStatistics() {
         navigate("/dashboard");
     };
 
-    // Process data based on selected time range
     const processData = (rawData, range) => {
         if (!rawData || rawData.length === 0) return [];
 
-        // Convert and sort data
         const convertedData = rawData
             .map(record => ({
                 date: new Date(record.recordTime),
@@ -49,11 +51,9 @@ export default function DashboardStatistics() {
 
         switch (range) {
             case "week":
-                // Last 7 days
                 const weekAgo = new Date(now);
                 weekAgo.setDate(now.getDate() - 7);
                 filteredData = convertedData.filter(item => item.date >= weekAgo);
-                // Group by day
                 groupedData = filteredData.reduce((acc, item) => {
                     const day = item.date.getDate();
                     if (!acc[day]) {
@@ -67,38 +67,36 @@ export default function DashboardStatistics() {
                     return acc;
                 }, {});
                 break;
-
             case "month":
-                // Last 30 days
                 const monthAgo = new Date(now);
                 monthAgo.setDate(now.getDate() - 30);
                 filteredData = convertedData.filter(item => item.date >= monthAgo);
-                // Group by day
+
                 groupedData = filteredData.reduce((acc, item) => {
-                    const day = item.date.getDate();
-                    if (!acc[day]) {
-                        acc[day] = {
-                            date: item.date,
-                            day: `${item.date.getDate()}/${item.date.getMonth() + 1}`,
+                    const dateObj = item.date;
+                    const key = dateObj.toISOString().split('T')[0]; // yyyy-mm-dd
+                    if (!acc[key]) {
+                        acc[key] = {
+                            date: dateObj,
+                            day: `${dateObj.getDate()}/${dateObj.getMonth() + 1}`,
                             values: []
                         };
                     }
-                    acc[day].values.push(item.value);
+                    acc[key].values.push(item.value);
                     return acc;
                 }, {});
                 break;
 
+
             case "year":
-                // Last 12 months
                 const yearAgo = new Date(now);
                 yearAgo.setFullYear(now.getFullYear() - 1);
                 filteredData = convertedData.filter(item => item.date >= yearAgo);
-                // Group by month and calculate average
                 groupedData = filteredData.reduce((acc, item) => {
                     const month = item.date.getMonth();
                     const year = item.date.getFullYear();
                     const key = `${year}-${month}`;
-                    
+
                     if (!acc[key]) {
                         acc[key] = {
                             date: item.date,
@@ -115,13 +113,11 @@ export default function DashboardStatistics() {
                 filteredData = convertedData;
         }
 
-        // Calculate averages for grouped data
         const result = Object.values(groupedData).map(group => ({
             ...group,
             value: group.values.reduce((sum, val) => sum + val, 0) / group.values.length
         }));
 
-        // Update info map
         if (result.length > 0) {
             const minDate = result[0].date;
             const maxDate = result[result.length - 1].date;
@@ -129,15 +125,66 @@ export default function DashboardStatistics() {
             const average = total / result.length;
             const lastValue = result[result.length - 1].value;
 
+            const maxValue = Math.max(...result.map(item => item.value));
+            const minValue = Math.min(...result.map(item => item.value));
+
             setInfoMap({
                 showingDataFrom: minDate,
                 lastUpdated: maxDate,
                 lastMeasured: `${lastValue.toFixed(1)}${getUnit(activeChart)}`,
                 averageValue: average.toFixed(1),
+                maxValue: maxValue.toFixed(1),
+                minValue: minValue.toFixed(1),
             });
         }
 
         return result;
+    };
+
+    const exportToExcel = async () => {
+        const chartTypes = ["Moisture", "Temperature", "Lighting", "Humidity", "AmountOfWater"];
+        const workbook = XLSX.utils.book_new();
+    
+        for (let chart of chartTypes) {
+            const sheetData = [];
+    
+            for (let range of ["week", "month", "year"]) {
+                // Fetch data
+                let endpoint = "";
+                switch (chart) {
+                    case "Moisture": endpoint = "moisture"; break;
+                    case "Temperature": endpoint = "temperature"; break;
+                    case "Lighting": endpoint = "light"; break;
+                    case "Humidity": endpoint = "humidity"; break;
+                    case "AmountOfWater": endpoint = "amountofwater"; break;
+                    default: endpoint = "moisture";
+                }
+    
+                try {
+                    const response = await axios.get(`${process.env.REACT_APP_HOST}/api/records/${endpoint}/1`);
+                    const processed = processData(response.data, range);
+    
+                    sheetData.push([`${chart} - ${range.toUpperCase()}`]);
+                    sheetData.push(["Date", "Value"]);
+    
+                    processed.forEach((item) => {
+                        const label = item.day || item.month || "";
+                        sheetData.push([label, item.value]);
+                    });
+    
+                    sheetData.push([]);
+                } catch (error) {
+                    console.error(`Failed to fetch ${chart} - ${range}:`, error);
+                }
+            }
+    
+            const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+            XLSX.utils.book_append_sheet(workbook, worksheet, chart);
+        }
+    
+        const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+        const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+        saveAs(blob, "Dashboard_Statistics.xlsx");
     };
 
     const fetchData = async () => {
@@ -180,13 +227,13 @@ export default function DashboardStatistics() {
             case "Moisture":
                 return [0, 100];
             case "Temperature":
-                return [0, 50]; // Adjusted for more realistic temperature range
+                return [0, 50]; 
             case "Lighting":
                 return [250, 2000];
             case "Humidity":
                 return [0, 100];
             case "AmountOfWater":
-                return [0, 5000]; // Assuming ml as unit
+                return [0, 5000]; 
             default:
                 return [0, 100];
         }
@@ -234,7 +281,10 @@ export default function DashboardStatistics() {
                 </button>
 
                 <h1 className="text-2xl font-semibold">Statistics</h1>
-                <button className="p-2 rounded-full hover:bg-gray-200">
+                <button 
+                    className="p-2 rounded-full hover:bg-gray-200"
+                    onClick={exportToExcel}
+                >
                     <Download className="w-6 h-6" />
                 </button>
             </div>
@@ -276,7 +326,7 @@ export default function DashboardStatistics() {
                             <BarChart data={processedData}>
                                 <XAxis dataKey={timeRange === "year" ? "month" : "day"} stroke="#A0A0A0" />
                                 <YAxis domain={getYAxisDomain()} stroke="#A0A0A0" />
-                                <Tooltip 
+                                <Tooltip
                                     formatter={(value) => [`${value} ${getUnit(activeChart)}`, activeChart === "AmountOfWater" ? "Water Amount" : activeChart]}
                                     labelFormatter={(label) => `Date: ${label}`}
                                 />
@@ -292,7 +342,7 @@ export default function DashboardStatistics() {
                             <LineChart data={processedData}>
                                 <XAxis dataKey={timeRange === "year" ? "month" : "day"} stroke="#A0A0A0" />
                                 <YAxis domain={getYAxisDomain()} stroke="#A0A0A0" />
-                                <Tooltip 
+                                <Tooltip
                                     formatter={(value) => [`${value} ${getUnit(activeChart)}`, activeChart === "AmountOfWater" ? "Water Amount" : activeChart]}
                                     labelFormatter={(label) => `Date: ${label}`}
                                 />
@@ -326,6 +376,16 @@ export default function DashboardStatistics() {
                     <p>
                         Average value: <strong>
                             {infoMap.averageValue ? `${infoMap.averageValue}${getUnit(activeChart)}` : "N/A"}
+                        </strong>
+                    </p>
+                    <p>
+                        Max value: <strong>
+                            {infoMap.maxValue ? `${infoMap.maxValue}${getUnit(activeChart)}` : "N/A"}
+                        </strong>
+                    </p>
+                    <p>
+                        Min value: <strong>
+                            {infoMap.minValue ? `${infoMap.minValue}${getUnit(activeChart)}` : "N/A"}
                         </strong>
                     </p>
                 </div>
