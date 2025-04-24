@@ -1,0 +1,22 @@
+### Create a new poll
+POST http://localhost:3000/polls
+Content-Type: application/json
+
+{
+  "title": "What's your favorite programming language?",
+  "options": ["JavaScript", "Python", "Java", "C#", "Go"]
+}
+
+### Get all polls
+GET http://localhost:3000/polls
+
+### Get a specific poll
+GET http://localhost:3000/polls/1
+
+### Vote for an option (replace optionId with actual ID from poll response)
+POST http://localhost:3000/polls/1/vote
+Content-Type: application/json
+
+{
+  "optionId": "replace-with-actual-option-id"
+} 
