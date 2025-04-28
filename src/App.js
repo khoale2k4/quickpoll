@@ -3,6 +3,7 @@ import CreatePoll from "./views/CreatePoll/index";
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import VotePoll from "./views/VotePoll/index";
 import PollResults from "./views/PollResult/index";
+import PollsList from "./views/PollList/index";
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
           <Route path="/" element={<CreatePoll />} />
           <Route path="/poll/:pollId" element={<VotePoll />} />
           <Route path="/poll/:pollId/results" element={<PollResults />} />
+          <Route path="/poll/" element={<PollsList />} />
         </Routes>
       </div>
     </Router>

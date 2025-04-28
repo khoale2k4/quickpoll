@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
-import { CheckCircle, ChevronLeft, AlertCircle } from "lucide-react";
+import { CheckCircle, ChevronLeft, AlertCircle, Share2 } from "lucide-react";
+import { faL } from "@fortawesome/free-solid-svg-icons";
 
 function VotePoll() {
     const { pollId } = useParams();
@@ -11,45 +13,44 @@ function VotePoll() {
     const [submitting, setSubmitting] = useState(false);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        // Simulate API call
-        setTimeout(() => {
-            try {
-                // Mock data
-                setPoll({
-                    id: pollId,
-                    title: "What's your favorite programming language?",
-                    description: "Please select one option that best represents your preference.",
-                    options: [
-                        "JavaScript",
-                        "Python",
-                        "Java",
-                        "C#",
-                        "Go"
-                    ],
-                    createdBy: "John Doe",
-                    createdAt: "April 25, 2025"
-                });
-                setLoading(false);
-            } catch (err) {
-                setError("Failed to load poll data");
-                setLoading(false);
+    const handleFetchPoll = async () => {
+        try {
+            const response = await axios.get(`${(process.env.API_HOST || 'http://localhost:3000')}/polls/${pollId}`,);
+            if (response.status === 200) {
+                const data = response.data;
+                setPoll(data.poll);
+            } else {
+                setError("Có lỗi xảy ra");
             }
-        }, 800);
+            setLoading(false);
+        } catch (error) {
+            console.log("Có lỗi xảy ra");
+        }
+    }
+
+    useEffect(() => {
+        handleFetchPoll();
     }, [pollId]);
 
-    const handleVote = () => {
+    const handleVote = async () => {
         if (selectedOption !== null) {
             setSubmitting(true);
+            const response = await axios.post(`${(process.env.API_HOST || 'http://localhost:3000')}/polls/${pollId}/vote`, {
+                optionId: poll.options[selectedOption].id
+            });
+            if (response.status === 200) {
+            } else {
+                setError("Có lỗi xảy ra");
+            }
 
-            // Simulate API submission
+            setSubmitting(false);
             setTimeout(() => {
                 navigate(`/poll/${pollId}/results`);
             }, 1000);
         }
     };
 
-    if (loading) {
+    if (loading || !poll) {
         return (
             <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -68,7 +69,7 @@ function VotePoll() {
 
     return (
         <div className="bg-white rounded-lg shadow-lg p-6 max-w-md mx-auto">
-            <div className="flex items-center gap-2 mb-6">
+            <div className="flex items-center justify-between mb-6">
                 <button
                     className="p-2 rounded-full hover:bg-gray-100 transition"
                     onClick={() => navigate(-1)}
@@ -76,17 +77,28 @@ function VotePoll() {
                     <ChevronLeft size={20} />
                 </button>
                 <h1 className="text-xl font-semibold text-gray-800">Vote on Poll</h1>
+                <button
+                    onClick={() => {
+                        navigator.clipboard.writeText(`${(process.env.REACT_APP_HOST || 'http://localhost:3001')}/poll/${pollId}/results`).then(() => {
+                            alert('Link copied to clipboard!');
+                        });
+                    }}
+                    className="p-2 rounded-full hover:bg-gray-100 transition flex items-center justify-center"
+                    title="Share poll"
+                >
+                    <Share2 size={18} />
+                </button>
             </div>
 
             <div className="mb-6">
                 <h2 className="text-xl font-bold text-gray-800 mb-2">{poll.title}</h2>
-                {poll.description && (
+                {/* {poll.description && (
                     <p className="text-gray-600 mb-2">{poll.description}</p>
-                )}
+                )} */}
                 <div className="flex items-center text-sm text-gray-500">
-                    <span>Created by {poll.createdBy}</span>
-                    <span className="mx-2">•</span>
-                    <span>{poll.createdAt}</span>
+                    {/* <span>Created by {poll.createdBy}</span> */}
+                    {/* <span className="mx-2">•</span> */}
+                    <span>Created {new Date(poll.createdAt).toLocaleString()}</span>
                 </div>
             </div>
 
@@ -95,15 +107,15 @@ function VotePoll() {
                     <div
                         key={index}
                         className={`relative border rounded-lg p-4 transition cursor-pointer ${selectedOption === index
-                                ? 'border-blue-500 bg-blue-50'
-                                : 'border-gray-200 hover:border-gray-300'
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-gray-300'
                             }`}
                         onClick={() => setSelectedOption(index)}
                     >
                         <div className="flex items-center">
                             <div className={`w-5 h-5 mr-3 rounded-full border ${selectedOption === index
-                                    ? 'border-blue-500 bg-blue-500'
-                                    : 'border-gray-300'
+                                ? 'border-blue-500 bg-blue-500'
+                                : 'border-gray-300'
                                 }`}>
                                 {selectedOption === index && (
                                     <CheckCircle className="text-white" size={20} />
@@ -113,7 +125,7 @@ function VotePoll() {
                                 htmlFor={`option-${index}`}
                                 className="flex-grow cursor-pointer font-medium"
                             >
-                                {option}
+                                {option.text}
                             </label>
                             <input
                                 type="radio"
@@ -133,8 +145,8 @@ function VotePoll() {
                 onClick={handleVote}
                 disabled={selectedOption === null || submitting}
                 className={`w-full py-3 px-4 rounded-lg font-medium transition ${selectedOption === null
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
                     }`}
             >
                 {submitting ? (

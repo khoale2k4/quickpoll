@@ -1,14 +1,27 @@
 import { useState } from 'react';
+import { ChevronRight } from 'react-feather';
+import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
 import { PlusCircle, Send, Trash2 } from 'lucide-react';
 
 export default function PollCreator() {
     const [question, setQuestion] = useState('');
     const [options, setOptions] = useState(['', '']);
+    const [link, setLink] = useState(null);
+    const [linkResult, setLinkResult] = useState(null);
+    const navigate = useNavigate();
 
-    const handleCreate = () => {
-        // Poll creation logic would go here
+    const handleCreate = async () => {
         console.log({ question, options: options.filter(opt => opt !== '') });
-        alert('Poll created successfully!');
+        const response = await axios.post((process.env.API_HOST || 'http://localhost:3000') + '/polls', {
+            title: question,
+            options
+        });
+        const data = response.data;
+        console.log(data.poll.id);
+        setLink((process.env.REACT_APP_HOST || 'http://localhost:3001') + '/poll/' + data.poll.id)
+        setLinkResult((process.env.REACT_APP_HOST || 'http://localhost:3001') + '/poll/' + data.poll.id + '/results')
+        alert('Poll created successfully!', data);
     };
 
     const removeOption = (index) => {
@@ -17,6 +30,22 @@ export default function PollCreator() {
             newOptions.splice(index, 1);
             setOptions(newOptions);
         }
+    };
+
+    const handleCopyLink = (str) => {
+        if (str === 'link' && link) {
+            navigator.clipboard.writeText(link).then(() => {
+                alert('Link copied to clipboard!');
+            });
+        } else if (str === 'result' && linkResult) {
+            navigator.clipboard.writeText(linkResult).then(() => {
+                alert('Link copied to clipboard!');
+            });
+        }
+    };
+
+    const handleViewAllPolls = () => {
+        navigate(`/poll`);
     };
 
     return (
@@ -84,6 +113,47 @@ export default function PollCreator() {
                     <Send size={18} />
                     Create Poll
                 </button>
+
+                {link && (
+                    <div className="mt-4">
+                        <p className="text-sm text-gray-600 mb-2">Poll Link:</p>
+                        <div className="flex items-center gap-2">
+                            <span className="text-blue-600">{link}</span>
+                            <button
+                                onClick={() => handleCopyLink('link')}
+                                className="text-blue-600 hover:text-blue-800 transition p-2 rounded"
+                                title="Copy Link"
+                            >
+                                Copy Link
+                            </button>
+                        </div>
+                    </div>
+                )}
+                {linkResult && (
+                    <div className="mt-4">
+                        <p className="text-sm text-gray-600 mb-2">Poll Result Link:</p>
+                        <div className="flex items-center gap-2">
+                            <span className="text-blue-600">{linkResult}</span>
+                            <button
+                                onClick={() => handleCopyLink('result')}
+                                className="text-blue-600 hover:text-blue-800 transition p-2 rounded"
+                                title="Copy Link"
+                            >
+                                Copy Result Link
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                <div className="mt-6 flex gap-4">
+                    <button
+                        onClick={handleViewAllPolls}
+                        className="flex items-center gap-2 text-white bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg"
+                    >
+                        <ChevronRight size={18} />
+                        View All Polls
+                    </button>
+                </div>
             </div>
         </div>
     );
