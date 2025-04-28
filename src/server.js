@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const http = require('http');
 const socketIo = require('socket.io');
+const { handleConnet } = require('./socket/index');
 
 // Load environment variables
 dotenv.config();
@@ -28,17 +29,13 @@ app.get('/', (req, res) => {
 
 // Import routes
 const apiRoutes = require('./routes/api');
-const pollsRoutes = require('./routes/polls');
+const { router: pollsRoutes } = require('./routes/polls');
 
 app.use('/api', apiRoutes);
 app.use('/polls', pollsRoutes);
 
-io.on('connection', (socket) => {
-  console.log('A user connected');
-  socket.on('disconnect', () => {
-    console.log('User disconnected');
-  });
-});
+const { startSocket } = require('./socket/index');
+io.on('connection', startSocket);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
