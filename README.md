@@ -1,99 +1,104 @@
-# Node.js Server Project
+# Backend Poll Application
 
-A simple Node.js server built with Express.js.
+This repository contains the backend implementation of a polling application built using Express.js. It handles poll creation, voting, and retrieval of poll results. The backend is designed to be connected with a frontend that can interact with these endpoints.
 
-## Features
+## Setup Instructions
 
-- RESTful API endpoints
-- Environment variable configuration
-- Express middleware setup
-- Basic error handling
-- Polling system (create polls, vote, and view results)
-
-## Getting Started
+Follow these steps to get the backend up and running on your local machine:
 
 ### Prerequisites
 
-- Node.js (v14 or higher)
-- npm (v6 or higher)
+Node.js (>= 14.x)
 
-### Installation
+npm or yarn (preferably npm)
 
-1. Clone the repository
-2. Install dependencies:
-   ```
-   npm install
-   ```
-3. Create a `.env` file in the root directory with:
-   ```
-   PORT=3000
-   NODE_ENV=development
-   ```
+### Steps
 
-### Running the Server
-
-Development mode with auto-restart:
 ```
-npm run dev
+    git clone https://github.com/khoale2k4/quickpoll.git
+
+    git checkout backend
+
+    npm install
+
+    npm run start
 ```
+   
+### API Endpoints
 
-Production mode:
-```
-npm start
-```
+Here are the available API endpoints that the backend exposes:
 
-## API Endpoints
+GET /polls
 
-### Items API
-- `GET /api/items` - Get all items
-- `GET /api/items/:id` - Get a specific item
-- `POST /api/items` - Create a new item
-- `PUT /api/items/:id` - Update an item
-- `DELETE /api/items/:id` - Delete an item
+Description: Fetch all polls.
 
-### Polling API
-- `GET /polls` - Get all polls
-- `GET /polls/:id` - Get a specific poll with vote counts
-- `POST /polls` - Create a new poll with title and options
-- `POST /polls/:id/vote` - Submit a vote for a poll option
+Response: A list of all polls stored in the system.
 
-#### Creating a Poll
-```
 POST /polls
-Content-Type: application/json
 
+Description: Create a new poll with a title and options.
+
+Request Body:
+```
 {
-  "title": "Poll title",
-  "options": ["Option 1", "Option 2", "Option 3"]
+  "title": "What is your favorite color?",
+  "options": ["Red", "Blue", "Green"]
 }
 ```
 
-#### Voting on a Poll
-```
+Response: The created poll object, with a unique id and the list of options.
+
 POST /polls/:id/vote
-Content-Type: application/json
 
+Description: Submit a vote for an option in a poll.
+
+Request Body:
+```
 {
-  "optionId": "option-id-from-poll"
+  "optionId": "option-id-123"
 }
 ```
 
-## Project Structure
+Response: A success message confirming the vote has been recorded.
 
-```
-nodejs-server/
-├── .env                   # Environment variables
-├── .gitignore             # Git ignore file
-├── package.json           # Project metadata and dependencies
-├── README.md              # Project documentation
-├── examples.http          # Example API requests
-└── src/                   # Source code
-    ├── server.js          # Main server file
-    ├── routes/            # Route definitions
-    │   ├── api.js         # API routes
-    │   └── polls.js       # Poll routes
-    ├── controllers/       # Route controllers (empty)
-    ├── models/            # Data models (empty)
-    └── middleware/        # Middleware functions
-        └── logger.js      # Example logging middleware
-``` # quickpoll-be
+GET /polls/:id
+
+Description: Fetch a poll by its ID, including vote counts for each option.
+
+Response: The poll details, including total votes and options.
+
+## How AI Tools Were Used
+
+In this project, Cursor.so were utilized to speed up development and improve code quality:
+
+Assisted in scaffolding the backend API routes. It generated the logic for creating polls, submitting votes, and retrieving poll results.
+
+AI also recommended the best practices for handling in-memory data storage and efficient poll management.
+
+Used to help refactor unclear or inefficient parts of the code to improve scalability and performance.
+
+AI helped generate unit tests for the backend API endpoints. These tests ensure that all functions are working correctly and that API responses conform to the expected structure.
+
+
+### What You Would Add Next If You Had More Time
+If I had more time, I would enhance the backend in the following ways:
+
+Database Integration:
+
+Replace the in-memory data store with a proper database (e.g., MongoDB, PostgreSQL) to persist poll data and votes across server restarts.
+
+Authentication and Authorization:
+
+Add user authentication to ensure only authorized users can create polls or vote on existing polls. This could involve implementing JWT tokens or OAuth for secure access.
+
+Poll Expiry and Cleanup:
+
+Implement a feature to expire polls after a certain period and automatically clean up old polls and vote data from the system.
+
+Rate Limiting:
+
+Introduce rate limiting to prevent abuse of the API, especially for voting endpoints. This would prevent users from casting multiple votes for the same poll in a short period.
+
+Error Handling and Validation:
+
+Improve error handling with more granular responses and input validation. This would ensure the API is more robust and easier to debug.
