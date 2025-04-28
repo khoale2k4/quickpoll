@@ -67,6 +67,9 @@ router.post('/:id/vote', (req, res) => {
   // Increment vote count
   option.votes += 1;
 
+  // send message
+  io.to(pollId.toString()).emit('pollResults', poll);
+
   res.json({ 
     message: 'Vote recorded successfully', 
     poll 
