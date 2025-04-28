@@ -2,7 +2,7 @@ const express = require('express');
 
 module.exports = (io) => {
   const router = express.Router();
-  
+
   // In-memory data store for polls  
   const polls = [];
   let nextPollId = 1;
@@ -70,8 +70,8 @@ module.exports = (io) => {
     option.votes += 1;
 
     // send message
-    io.to(pollId.toString()).emit('pollResults', poll);
-    console.log(poll[pollId])
+    io.to(pollId.toString()).emit('pollResults', polls);
+    console.log(polls[pollId])
 
     res.json({
       message: 'Vote recorded successfully',
