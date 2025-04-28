@@ -15,8 +15,11 @@ npm or yarn (preferably npm)
 ### `Steps`
 
 git clone https://github.com/khoale2k4/quickpoll.git
+
 cd frontend
+
 npm install
+
 npm run start
 
 ### `How AI Tools Were Used`
