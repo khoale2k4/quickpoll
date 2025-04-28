@@ -31,7 +31,8 @@ app.get('/', (req, res) => {
 
 // Import routes
 const apiRoutes = require('./routes/api');
-const { router: pollsRoutes } = require('./routes/polls');
+const pollsModule = require('./routes/polls')(io); 
+const pollsRoutes = pollsModule.router;
 
 app.use('/api', apiRoutes);
 app.use('/polls', pollsRoutes);
